@@ -1,0 +1,469 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  width: 90vw;
+  height: 5vh;
+  margin-top: 5vh;
+  background: linear-gradient(0deg, rgba(214,226,235,1) 10%, rgba(255,255,255,1) 90%);
+  border: solid 1px lightgray;
+  border-radius: 10px;
+}
+
+.nav_button {
+  background: none;
+  border: none;
+  font-size: medium;
+  font-weight: bold;
+}
+
+.nav_logo {
+  max-width: 15vw;
+  max-height: 3vh;
+}
+
+.nav_separator {
+  background: lightgray;
+  height: 100%;
+  width: 1px;
+}
+
+#projects_dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+@keyframes dropdown {
+  from {width: 0vw; height: 0vh;}
+  to {width: 8vw; height: 16vh;}
+}
+
+.project_dropdown_content {
+  display: none;
+  justify-content: space-around;
+  align-items: flex-start;
+  flex-direction: column;
+  position: absolute;
+  background: linear-gradient(0deg, rgba(214,226,235,1) 10%, rgba(255,255,255,1) 90%);
+  width: 0vw;
+  height: 0vh;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  padding: 16px;
+  animation-name: dropdown;
+  animation-duration: 0.25s;
+}
+
+#projects_dropdown:hover .project_dropdown_content {
+  display: flex;
+  width: 8vw;
+  height: 16vh;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+.offscreen {
+  position: absolute;
+  left: -9999px;
+}
+
+.errmsg {
+  position: absolute;
+  top: 40vh;
+  background-color: lightpink;
+  color: firebrick;
+  font-weight: bold;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.errmsg2fa {
+  position: absolute;
+  top: 32vh;
+  background-color: lightpink;
+  color: firebrick;
+  font-weight: bold;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.errmsg_password_change {
+  position: absolute;
+  top: 45vh;
+  background-color: lightpink;
+  color: firebrick;
+  font-weight: bold;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.body{
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.body_admin {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.login_deco {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 70vw;
+  height: 100vh;
+  background-image: url('background_img.jpg');
+}
+
+.back_button {
+  position: absolute;
+  top: 2vh;
+  left: 1vw;
+  color: #16362e;
+  font-size: 30px;
+}
+
+.back_button:hover {
+  cursor: pointer;
+}
+
+.login_body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 30vw;
+  height: 100vh;
+  border-left: 5px solid #16362e;
+  background-color: #16362e40;
+}
+
+.login_section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 30vw;
+  height: 50vh;
+}
+
+.login_form {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  height: 30vh;
+}
+
+.login_input {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  align-items: center;
+  border: 2px solid #16362e;
+  border-radius: 10px;
+  margin-top: 2vh;
+  margin-bottom: 2vh;
+}
+
+.input_icon {
+  max-width: 20px;
+  max-height: 20px;
+  margin-left: 4px;
+  margin-right: 4px;
+}
+
+input{
+    border:none;
+    border-radius: 10px;
+    height: 4vh;
+    width: 12vw;
+    padding-left: 10px;
+}
+
+.login_button{
+  width: 8vw;
+  height: 6vh;
+  border: 1px solid #16362e;
+  color: #16362e;
+  border-radius: 20px;
+  font-size: 20px;
+  margin-top: 2vh;
+}
+
+.disable_2fa_button{
+  width: 12vw;
+  height: 6vh;
+  border: 1px solid #16362e;
+  color: #16362e;
+  border-radius: 20px;
+  font-size: 20px;
+  margin-top: 2vh;
+}
+
+.change_password_button {
+  width: 14vw;
+  height: 6vh;
+  border: 1px solid #16362e;
+  color: #16362e;
+  border-radius: 20px;
+  font-size: 20px;
+  margin-top: 2vh;
+}
+
+.login_button:hover{
+  background-color: #16362e20;
+  cursor: pointer;
+}
+
+.change_password_button:hover{
+  background-color: #16362e20;
+  cursor: pointer;
+}
+
+h1{
+  font-weight: normal;
+  font-size: 50px;
+  color: #16362e;
+}
+
+h5{
+  font-weight: normal;
+  font-size: 20px;
+  color: #16362e;
+}
+
+/* Fim do CSS para Login */
+
+/* Começo do CSS para Cliente */
+
+.cliente_home{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+}
+
+.cliente_home_main{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: flex-start;
+  padding-left: 1vw;
+  width: 50vw;
+  height: 100vh;
+  background-color: #16362e40;
+  border-right: 5px solid #16362e;
+}
+
+.main_menu_button {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding-left: 2%;
+  width: 97%;
+  height: 8vh;
+  border: 1px solid #16362e;
+  color: #16362e;
+  border-radius: 20px;
+  font-size: 25px;
+}
+
+.main_menu_button:hover{
+  background-color: #16362e20;
+  cursor: pointer;
+}
+
+.cliente_home_deco{
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-end;
+  flex-direction: column;
+  width: 50vw;
+  height: 100vh;
+  background-color: #16362e;
+  background-image: url('wysupp pattern.png');
+}
+
+.account_info{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 18vw;
+  height: 6vh;
+  background-color: #FFFFFF;
+  margin: 3vh 1vw 0vh 0vw;
+  border-radius: 10px;
+  border: 2px solid #16362e;
+}
+
+.account_icon_and_name {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 5vh;
+}
+
+.account_icon{
+  max-width: 20px;
+  max-height: 20px;
+  margin-left: 6px;
+  margin-right: 6px;
+}
+
+.account_info_name{
+  color: #16362e;
+}
+
+.settings_button{
+  border: none;
+  background: none;
+}
+
+.settings_button:hover{
+  cursor: pointer;
+}
+
+.settings_section{
+  visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  width: 18vw;
+  height: 40vh;
+  margin: 3vh 1vw 0vh 0vw;
+  background-color: white;
+  border: 1px solid #16362e;
+  border-radius: 10px;
+}
+
+#settings_header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: 17vw;
+  height: 5vh;
+  padding-left: 15px;
+  border-bottom: 1px solid #16362e;
+  color: #16362e;
+  font-size: 20px;
+}
+
+#settings_content {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-direction: column;
+  width: 18vw;
+  height: 35vh;
+  color: #16362e;
+  font-size: 18px;
+}
+
+.settings_change_password:hover {
+  cursor: pointer;
+}
+
+.languages_dropdown_content {
+  display: none;
+  justify-content: space-around;
+  align-items: flex-start;
+  flex-direction: column;
+  position: absolute;
+  background: linear-gradient(0deg, rgba(214,226,235,1) 10%, rgba(255,255,255,1) 90%);
+  width: 0vw;
+  height: 0vh;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  padding: 16px;
+  animation-name: dropdown;
+  animation-duration: 0.25s;
+}
+
+#languages_dropdown:hover .languages_dropdown_content {
+  display: flex;
+  width: 8vw;
+  height: 16vh;
+  background-color: white;
+}
+
+/* teste */
+
+.tracker-box{
+  background-color: white;
+  font-size: 14px;
+  color: #16362e;
+  letter-spacing: 0.09em;
+  padding: 15px;
+  border-radius: 5px;
+  margin-top: 5px;
+  border: 2px solid #16362e;
+}
+
+.tracker-box div{
+  margin: 5px 0;
+}
+
+.tracker-box .validated{
+  color: #21b67d;
+}
+
+.list-icon{
+  margin-right: 8px;
+}
+
+.list-icon.green{
+  color: #0f0;
+}
+
+.connected_devices_body{
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  /* background-image: url('background_img.jpg');
+  background-size: cover; */
+}
+
+.connected_devices_header{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 20vh;
+  background-color: #c5cdcb;
+  border-bottom: 20px solid #16362e;
+}
+
+.two_factor_authentication_button {
+  width: 16vw;
+  height: 6vh;
+  border: 1px solid #16362e;
+  color: #16362e;
+  border-radius: 20px;
+  font-size: 20px;
+  margin-top: 2vh;
+}
