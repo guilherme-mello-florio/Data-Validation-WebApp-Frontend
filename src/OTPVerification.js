@@ -11,7 +11,7 @@ function OTPVerification() {
         navigate('/2fa-setup');
     }
 
-    function handleSubmit(event) {
+    const handleSubmit = async (event) => {
       event.preventDefault();
       const username = localStorage.getItem('username');
   
@@ -19,29 +19,35 @@ function OTPVerification() {
           username: username,
           otp: otp,
       };
-  
-      fetch('http://localhost:8000/verify-2fa/' + username, {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody),
-      })
-      .then((res) => {
-          if (res.ok) {
-              navigate('/home');
-          } else {
-              alert("Invalid OTP. Please try again.");
-          }
-      })
-      .catch((error) => console.error("Error verifying OTP:", error));
-  }
 
-    //if (user_data.role == "admin") {
-    //    navigate('/admin');
-    //} else if (user_data.role == "customer") {
-    //    navigate('/home');
-    //}
+      const user_response = await fetch('http://localhost:8000/users/' + username, {
+        method: 'GET',
+    })  
+    
+        if (user_response.ok) {
+            const user_data = await user_response.json();
+
+            await fetch('http://localhost:8000/verify-2fa/' + username, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody),
+            })
+            .then((res) => {
+                if (res.ok) {
+                    if (user_data.role == "admin") {
+                        navigate('/admin');
+                    } else if (user_data.role == "customer") {
+                        navigate('/home');
+                    }
+                } else {
+                    alert("Invalid OTP. Please try again.");
+                }
+            })
+            .catch((error) => console.error("Error verifying OTP:", error));
+        }
+    }
 
   return (
     <div className="connected_devices_body">
@@ -50,7 +56,7 @@ function OTPVerification() {
             <img src={logo} />
         </header>
         <form className="login_form" onSubmit={handleSubmit}>
-            <h3 style={{ color: "#16362e" }}>Enter the OTP sent to your email</h3>
+            <h3 style={{ color: "#16362e" }}>Enter the code sent to Authentication App</h3>
             <div className="input_container">
                 <input
                     type="text"

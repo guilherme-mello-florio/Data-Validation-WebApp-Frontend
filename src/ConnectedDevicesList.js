@@ -6,10 +6,13 @@ function ProtectedPageCheckConnectedDevices() {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [username, setUsername] = useState('');
 
   const navigate = useNavigate();
 
   useEffect(() => {
+          setUsername(localStorage.getItem('username'));
+
           const verifyToken = async () => {
               const token = localStorage.getItem('token');
               try {
@@ -88,9 +91,21 @@ function ProtectedPageCheckConnectedDevices() {
     }
   };
 
-  function back (){
-    navigate('/home');
+  async function back (){
+    const user_response = await fetch('http://localhost:8000/users/' + username, {
+        method: 'GET',
+    })  
+
+    if (user_response.ok) {
+        const data = await user_response.json();
+        console.log(data);
+    if (data.role == "admin") {
+        navigate('/admin');
+    } else if (data.role == "customer") {
+        navigate('/home');
   }
+    }
+}
 
   if (loading) return <p>Carregando dispositivos...</p>;
   if (error) return <p>Erro ao carregar dispositivos: {error}</p>;

@@ -9,6 +9,12 @@ import ProtectedPageLoginHistory from './LoginHistory';
 import TwoFactorSetup from './2faSetup';
 import OTPVerification from './OTPVerification';
 import Disable2FA from './Disable2FA';
+import AdminDashboard from './admin_pages/AdminDashboard';
+import ManageUsers from './admin_pages/ManageUsers';
+import ManageProjects from './admin_pages/ManageProjects';
+import Monitoring from './admin_pages/Monitoring';
+import CreateUser from './admin_pages/CreateUser';
+import EditUser from './admin_pages/EditUser';
 
 function App() {
   useEffect(() => {
@@ -24,8 +30,6 @@ function App() {
     log_description: "User has been logged out due to inactivity at " + new Date(),
     user_username: localStorage.getItem('username'),
   };
-
-  console.log(autoLogoutDetails);
 
   let timeInterval = setInterval(async () => {
     const lastActivity = new Date(localStorage.getItem('LastActivity'));
@@ -66,6 +70,12 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/admin" element={<ProtectedPageAdmin />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/manage-users" element={<ManageUsers />} />
+        <Route path="/admin/manage-users/create-user" element={<CreateUser />} />
+        <Route path="/admin/manage-users/edit-user" element={<EditUser />} />
+        <Route path="/admin/manage-projects" element={<ManageProjects />} />
+        <Route path="/admin/monitoring" element={<Monitoring />} />
         <Route path="/home" element={<ProtectedPageCustomer />} />
         <Route path="/change-password" element={<ProtectedPageChangePassword />} />
         <Route path="/connected-devices" element={<ProtectedPageCheckConnectedDevices />} />
@@ -73,6 +83,10 @@ function App() {
         <Route path="/2fa-setup" element={<TwoFactorSetup />} />
         <Route path="/otp-verification" element={<OTPVerification />}/>
         <Route path="/disable-2fa" element={<Disable2FA />}/>
+        <Route path="/disable-2fa" element={<AdminDashboard />}/>
+        <Route path="/disable-2fa" element={<ManageUsers />}/>
+        <Route path="/disable-2fa" element={<ManageProjects />}/>
+        <Route path="/monitoring" element={<Monitoring />}/>
       </Routes>
     </Router>
   );

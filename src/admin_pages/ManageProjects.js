@@ -1,8 +1,7 @@
-import AdminHeader from "./AdminHeader"
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function ManageUsers(){
+export default function ManageProjects(){
 
     const navigate = useNavigate();
     
@@ -24,21 +23,9 @@ export default function ManageUsers(){
                 verifyToken();
             }, [navigate]);
 
-    function createuser(){
-        navigate('/admin/manage-users/create-user')
-    }
-
-    function edituser(){
-        navigate('/admin/manage-users/edit-user')
-    }
-
     return(
-        <div className="manage_users_body">
-            <AdminHeader page="Manage Users"/>
-            <main className="manage_users_main">
-                <button className="manage_buttons" onClick={createuser}>Create User</button>
-                <button className="manage_buttons" onClick={edituser}>Edit User</button>
-            </main>
+        <div>
+            <p>essa e o manage projects</p>
         </div>
     )
 }

@@ -32,7 +32,7 @@ function TwoFactorSetup() {
   }
 
   function finish2faSetup() {
-    if (window.confirm("Are you sure you are done setting up 2FA?")) {
+    if (window.confirm("Are you sure you are done scanning the QR code and setting up 2FA?")) {
 
         fetch('http://localhost:8000/2fa/setup/save-secret/' + username + '/' + qrData.secret, {
             method: 'PUT'

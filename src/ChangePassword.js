@@ -72,10 +72,9 @@ function ProtectedPageChangePassword() {
                 body: JSON.stringify(newPasswordDetails),
             });
 
-
             if (response.ok && user_response.ok) {
                 const data = await response.json();
-                localStorage.setItem('token', data.access_token);
+                localStorage.removeItem('token');
 
                 alert("Password changed succesfully!");
             } else {
@@ -134,9 +133,21 @@ function ProtectedPageChangePassword() {
         }
       }
 
-      function back (){
-        navigate('/home');
+      async function back (){
+        const user_response = await fetch('http://localhost:8000/users/' + username, {
+            method: 'GET',
+        })  
+
+        if (user_response.ok) {
+            const data = await user_response.json();
+            console.log(data);
+        if (data.role == "admin") {
+            navigate('/admin');
+        } else if (data.role == "customer") {
+            navigate('/home');
       }
+        }
+    }
 
     return(
         <div className='body'>

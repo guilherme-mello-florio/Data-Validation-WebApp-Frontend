@@ -8,9 +8,21 @@ function UserLoginLogoutLog() {
   const [error, setError] = useState(null);
   const [username, setUsername] = useState('');
 
-  function back (){
-    navigate('/home');
+  async function back (){
+    const user_response = await fetch('http://localhost:8000/users/' + username, {
+        method: 'GET',
+    })  
+
+    if (user_response.ok) {
+        const data = await user_response.json();
+        console.log(data);
+    if (data.role == "admin") {
+        navigate('/admin');
+    } else if (data.role == "customer") {
+        navigate('/home');
   }
+    }
+}
 
   const navigate = useNavigate();
 
