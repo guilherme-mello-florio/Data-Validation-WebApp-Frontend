@@ -7,10 +7,6 @@ function OTPVerification() {
 
     const navigate = useNavigate();
 
-    function back (){
-        navigate('/2fa-setup');
-    }
-
     const handleSubmit = async (event) => {
       event.preventDefault();
       const username = localStorage.getItem('username');
@@ -52,7 +48,7 @@ function OTPVerification() {
   return (
     <div className="connected_devices_body">
         <header className='connected_devices_header'>
-            <div className='back_button' onClick={back}>◄ Back</div>
+            <div className='back_button' onClick={() => window.history.back()}>◄ Back</div>
             <img src={logo} />
         </header>
         <form className="login_form" onSubmit={handleSubmit}>

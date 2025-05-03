@@ -545,3 +545,15 @@ h5{
   width: 30vw;
   height: 30vh;
 }
+
+.forgot_password{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: black;
+  font-size: 14px;
+}
+
+.forgot_password{
+  cursor: pointer;
+}

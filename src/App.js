@@ -15,6 +15,8 @@ import ManageProjects from './admin_pages/ManageProjects';
 import Monitoring from './admin_pages/Monitoring';
 import CreateUser from './admin_pages/CreateUser';
 import EditUser from './admin_pages/EditUser';
+import ForgotPassword from './ForgotPassword';
+import ResetPassword from './ResetPassword';
 
 function App() {
   useEffect(() => {
@@ -87,6 +89,8 @@ function App() {
         <Route path="/disable-2fa" element={<ManageUsers />}/>
         <Route path="/disable-2fa" element={<ManageProjects />}/>
         <Route path="/monitoring" element={<Monitoring />}/>
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
       </Routes>
     </Router>
   );

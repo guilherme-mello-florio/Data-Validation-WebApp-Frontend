@@ -6,6 +6,7 @@ import { formatISO } from 'date-fns';
 export default function CreateUser(){
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [email, setEmail] = useState('');
 
     const navigate = useNavigate();
     
@@ -41,7 +42,8 @@ export default function CreateUser(){
         last_password_change: new Date(2000, 0, 1).toISOString().replace('T', ' ').split('.')[0],
         is_first_login: true,
         secret: "",
-        is_2fa_active: true
+        is_2fa_active: true,
+        email: email,
         };
 
         try {
@@ -92,6 +94,18 @@ export default function CreateUser(){
                         placeholder='Password'
                         onChange={(e) => setPassword(e.target.value)}
                         value={password}
+                        required
+                        />
+                    </div>
+
+                    <div>
+                        <label htmlFor="email">Email:</label>
+                        <input
+                        type="email"
+                        id="email"
+                        placeholder='Email'
+                        onChange={(e) => setEmail(e.target.value)}
+                        value={email}
                         required
                         />
                     </div>

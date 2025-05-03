@@ -15,7 +15,7 @@ function Login() {
     const [captchaDone, setCaptchaDone] = useState(false);
 
 
-    let recaptchaRef;
+    let recaptchaRef = useRef(null);
 
     useEffect(() => {
         const data = localStorage.getItem('login_attempts');
@@ -23,7 +23,7 @@ function Login() {
     }, [])
 
     function onChange(value) {
-        setCaptchaDone(true);
+        setCaptchaDone(!!value);
       }
 
     const navigate = useNavigate();
@@ -36,6 +36,10 @@ function Login() {
         setError('');
         return true;
     };
+
+    const forgot_password = () => {
+        navigate('/forgot-password');
+    }
 
 //-----------------------------------------
     const handleSubmit = async (event) => {
@@ -109,6 +113,11 @@ function Login() {
                 setLoginAttempts(loginAttempts + 1);
                 localStorage.setItem('login_attempts', JSON.stringify(loginAttempts));
                 console.log(loginAttempts);
+
+                if (loginAttempts >= 2 && recaptchaRef.current) { // Check ref exists
+                    recaptchaRef.current.reset();
+                    setCaptchaDone(false);
+                }
             } 
         } catch (error) {
             console.log(error);
@@ -156,7 +165,8 @@ function Login() {
                                 required
                             />
                         </section>
-                        {loginAttempts > 2 && <ReCAPTCHA ref={e => {recaptchaRef = e;}} sitekey='6LceJAgrAAAAAAgiDQpgmS6_Wv8jTyphyI-hWdPx' onChange={onChange} />}
+                        <div className='forgot_password' onClick={forgot_password}>Forgot your password?</div>
+                        {loginAttempts >= 3 && <ReCAPTCHA ref={recaptchaRef} sitekey='6LceJAgrAAAAAAgiDQpgmS6_Wv8jTyphyI-hWdPx' onChange={onChange} />}
                         {!captchaDone && loginAttempts <= 2 && <button className='login_button'>Login</button>}
                         {captchaDone && <button className='login_button'>Login</button>}
                     </form>
