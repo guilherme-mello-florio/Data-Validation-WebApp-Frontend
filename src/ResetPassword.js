@@ -18,6 +18,7 @@ const styles = {
 function ResetPassword() {
     const { token } = useParams(); // Get token from URL
     const navigate = useNavigate();
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [message, setMessage] = useState('');
@@ -58,7 +59,7 @@ function ResetPassword() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ token: token, new_password: password }),
+                body: JSON.stringify({ token: token, email: email, new_password: password }),
             });
 
             const data = await response.json();
@@ -70,12 +71,54 @@ function ResetPassword() {
             setMessage(data.message || 'Password reset successfully!');
             setPassword('');
             setConfirmPassword('');
+
+            // Body for logging the password reset attempt
+            const userIp = await fetch('https://api.ipify.org?format=json')
+                .then(response => response.json())
+                .then(data => data.ip)
+                .catch(() => 'unknown IP');
+
+            const passwordChangeRequestDetails = {
+                log_description: `User has successfully changed their password at ${new Date()} from IP address: ${userIp}`,
+                user_username: email,
+            };
+
+            // Log password reset attempt
+            const log_response = await fetch('http://localhost:8000/logs/', {   
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(passwordChangeRequestDetails),
+            });
+
             // Redirect to login after a short delay
             setTimeout(() => navigate('/'), 3000); // Navigate to login ('/')
 
         } catch (err) {
             console.error("Reset Password Error:", err);
              setError(err.message.includes("Failed to fetch") ? "Network error." : (err.message || 'Failed to reset password. The link may be invalid or expired.'));
+             
+            // Body for logging the password reset attempt
+            const userIp = await fetch('https://api.ipify.org?format=json')
+                .then(response => response.json())
+                .then(data => data.ip)
+                .catch(() => 'unknown IP');
+
+            const passwordChangeRequestDetails = {
+                log_description: `User has failed to change their password at ${new Date()} from IP address: ${userIp}`,
+                user_username: email,
+            };
+
+            // Log password reset attempt
+            const log_response = await fetch('http://localhost:8000/logs/', {   
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(passwordChangeRequestDetails),
+            });
+
         } finally {
             setIsLoading(false);
         }
@@ -92,6 +135,19 @@ function ResetPassword() {
             {/* Show form only if no success message */}
             {!message && (
                  <form onSubmit={handleSubmit}>
+                    <div style={styles.formGroup}>
+                        <label htmlFor="email" style={styles.label}>Email</label>
+                        <input
+                            type="email"
+                            id="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            style={styles.input}
+                            placeholder="Enter your email"
+                            disabled={isLoading}
+                        />
+                    </div>
                     <div style={styles.formGroup}>
                         <label htmlFor="password" style={styles.label}>New Password</label>
                         <input

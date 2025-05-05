@@ -50,6 +50,26 @@ function ForgotPassword() {
             setMessage(data.message || 'Password reset instructions sent.');
             setEmail(''); // Clear field on success
 
+            // Body for logging the password reset attempt
+            const userIp = await fetch('https://api.ipify.org?format=json')
+                .then(response => response.json())
+                .then(data => data.ip)
+                .catch(() => 'unknown IP');
+
+            const passwordChangeRequestDetails = {
+                log_description: `User has requested a password change at ${new Date()} from IP address: ${userIp}`,
+                user_username: email,
+            };
+
+            // Log password reset attempt
+            const log_response = await fetch('http://localhost:8000/logs/', {   
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(passwordChangeRequestDetails),
+            });
+
         } catch (err) {
             console.error("Forgot Password Error:", err);
             // Display a user-friendly error
