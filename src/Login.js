@@ -72,6 +72,26 @@ function Login() {
                 window.location.href = '/change-password';
             }
 
+            if (response.status === 429) {
+                const userIp = await fetch('https://api.ipify.org?format=json')
+                .then(response => response.json())
+                .then(data => data.ip)
+                .catch(() => 'unknown IP');
+
+                const loginBlockDetails = {
+                    log_description: `Login has been blocked by multiple failed login attempts at ${new Date()} from IP address: ${userIp}`,
+                    user_username: username,
+                  };
+
+                const log_response = await fetch('http://localhost:8000/logs/', {   
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(loginBlockDetails),
+                });
+            }
+
             if (response.ok && user_response.ok) {
                 const data = await response.json();
                 localStorage.setItem('token', data.access_token);
