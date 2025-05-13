@@ -53,8 +53,12 @@ function ProtectedPageAdmin() {
         navigate("/login-history");
     }
 
-    function ManageUsers(){
+    function manageUsers(){
         navigate("/admin/manage-users");
+    }
+
+    function monitoring(){
+        navigate("/admin/monitoring");
     }
 
 
@@ -84,9 +88,9 @@ function ProtectedPageAdmin() {
                     <h3>Welcome, {username}</h3>
                     <button className='main_menu_button'>Choose Project ▼</button>
                     <button className='main_menu_button'>Dashboard</button>
-                    <button className='main_menu_button' onClick={ManageUsers}>Manage Users</button>
+                    <button className='main_menu_button' onClick={manageUsers}>Manage Users</button>
                     <button className='main_menu_button'>Manage Projects</button>
-                    <button className='main_menu_button'>Monitoring</button>
+                    <button className='main_menu_button' onClick={monitoring}>Monitoring</button>
                 </div>
                 <div className='cliente_home_deco'>
                     <AccountInfo username={username} />

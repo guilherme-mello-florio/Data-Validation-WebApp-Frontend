@@ -41,7 +41,7 @@ export default function CreateUser(){
         // Ao criar o usuário, ele é obrigado a resetar a senha
         last_password_change: new Date(2000, 0, 1).toISOString().replace('T', ' ').split('.')[0],
         is_first_login: true,
-        secret: "",
+        secret: "", 
         is_2fa_active: true,
         email: email,
         };

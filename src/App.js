@@ -88,7 +88,6 @@ function App() {
         <Route path="/disable-2fa" element={<AdminDashboard />}/>
         <Route path="/disable-2fa" element={<ManageUsers />}/>
         <Route path="/disable-2fa" element={<ManageProjects />}/>
-        <Route path="/monitoring" element={<Monitoring />}/>
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
       </Routes>
