@@ -1,3 +1,4 @@
+import AdminHeader from './AdminHeader';
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf'; // For PDF export
@@ -6,363 +7,444 @@ import autoTable from 'jspdf-autotable'; // Import autoTable as a function
 // Import your CSS file if it's separate
 // import './Monitoring.css'; 
 
-// Assume AdminHeader is a component you have.
-// If AdminHeader is not defined, you might see an error or a blank space.
-// For demonstration, I'll use a placeholder if it's not available.
-let AdminHeader;
-try {
-  // This is a common pattern but might need adjustment based on actual project setup
-  AdminHeader = require('./AdminHeader').default || require('./AdminHeader');
-} catch (e) {
-  console.warn("AdminHeader component not found, using placeholder. Please ensure './AdminHeader' is correct.");
-  AdminHeader = ({ page }) => (
-    <header className="admin-header-placeholder">
-      <div className="admin-header-container-placeholder">
-        <h1>Admin Dashboard</h1>
-        <h2>Page: {page}</h2>
-      </div>
-    </header>
-  );
-}
 
 // Helper function to extract the main action/type from the log description
-const extractLogType = (description) => {
+const extractSystemLogType = (description) => {
   if (!description) return "Unknown";
   const match = description.match(/^(.*?) at /);
-  if (match && match[1]) {
-    return match[1].trim();
-  }
-  const parts = description.split(" at ");
-  return parts[0].trim();
+  if (match && match[1]) return match[1].trim();
+  return description.split(" at ")[0].trim();
 };
 
 // Helper function to extract the timestamp string from the log description
-const extractTimestampString = (description) => {
+const extractSystemLogTimestampString = (description) => {
   if (!description) return "";
   const parts = description.split(" at ");
-  if (parts.length > 1) {
-    return parts.slice(1).join(" at ").replace(/ from IP address: .*/, '').trim();
-  }
+  if (parts.length > 1) return parts.slice(1).join(" at ").replace(/ from IP address: .*/, '').trim();
   return "N/A";
 };
 
 // Helper function to parse log timestamp string into a Date object
-const parseLogTimestamp = (description) => {
-  const timestampString = extractTimestampString(description);
-  if (timestampString === "N/A") return null;
-  try {
-    return new Date(timestampString);
-  } catch (e) {
-    console.error("Error parsing date:", timestampString, e);
-    return null;
-  }
+const parseSystemLogTimestamp = (description) => {
+  const tsStr = extractSystemLogTimestampString(description);
+  if (tsStr === "N/A") return null;
+  try { return new Date(tsStr); } catch (e) { console.error("SysLog Date Parse Err:", tsStr, e); return null; }
 };
 
+const formatDate = (dateObj, includeTime = true) => {
+  if (!dateObj || !(dateObj instanceof Date) || isNaN(dateObj)) {
+    return "N/A";
+  }
+  // Format to YYYY-MM-DD HH:MM:SS or YYYY-MM-DD
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  if (includeTime) {
+    const hours = String(dateObj.getHours()).padStart(2, '0');
+    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+    const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
+  return `${year}-${month}-${day}`;
+};
 
 export default function Monitoring() {
   const navigate = useNavigate();
-  const [logs, setLogs] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('token'));
 
-  const [usernameFilter, setUsernameFilter] = useState('');
-  const [logTypeFilter, setLogTypeFilter] = useState('');
-  const [startDateFilter, setStartDateFilter] = useState('');
-  const [endDateFilter, setEndDateFilter] = useState('');
+  // --- State for System Logs ---
+  const [systemLogs, setSystemLogs] = useState([]);
+  const [systemLogsLoading, setSystemLogsLoading] = useState(true);
+  const [systemLogsError, setSystemLogsError] = useState(null);
+  const [sysUsernameFilter, setSysUsernameFilter] = useState('');
+  const [sysLogTypeFilter, setSysLogTypeFilter] = useState('');
+  const [sysStartDateFilter, setSysStartDateFilter] = useState('');
+  const [sysEndDateFilter, setSysEndDateFilter] = useState('');
 
+  // --- State for Interface Logs ---
+  const [interfaceLogs, setInterfaceLogs] = useState([]);
+  const [interfaceLogsLoading, setInterfaceLogsLoading] = useState(true);
+  const [interfaceLogsError, setInterfaceLogsError] = useState(null);
+  const [ifaceUsernameFilter, setIfaceUsernameFilter] = useState('');
+  const [ifaceAlterationTypeFilter, setIfaceAlterationTypeFilter] = useState('');
+  const [ifaceDidFailFilter, setIfaceDidFailFilter] = useState(''); // "all", "true", "false"
+  const [ifaceInterfaceFilter, setIfaceInterfaceFilter] = useState('');
+  const [ifaceProjectFilter, setIfaceProjectFilter] = useState('');
+  const [ifaceStartDateFilter, setIfaceStartDateFilter] = useState('');
+  const [ifaceEndDateFilter, setIfaceEndDateFilter] = useState('');
+
+  // Token Verification and Initial Data Fetch
   useEffect(() => {
-    const verifyToken = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        navigate('/');
-        return;
-      }
+    const localToken = localStorage.getItem('token');
+    if (!localToken) {
+      navigate('/');
+      return;
+    }
+    setToken(localToken);
+
+    const verifyTokenAndFetch = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/verify-token/${token}`);
-        if (!response.ok) {
-          throw new Error('Token verification failed. Status: ' + response.status);
-        }
-        fetchLogs(token);
+        const response = await fetch(`http://localhost:8000/verify-token/${localToken}`);
+        if (!response.ok) throw new Error('Token verification failed');
+        
+        // Fetch both types of logs
+        fetchSystemLogs(localToken);
+        fetchInterfaceLogs(localToken);
+
       } catch (err) {
         console.error("Token verification error:", err);
         localStorage.removeItem('token');
         navigate('/');
       }
     };
-
-    verifyToken();
+    verifyTokenAndFetch();
   }, [navigate]);
 
-  const fetchLogs = async (token) => {
-    setIsLoading(true);
-    setError(null);
+  // --- Fetching Logic for System Logs ---
+  const fetchSystemLogs = async (authToken) => {
+    setSystemLogsLoading(true);
+    setSystemLogsError(null);
     try {
       const response = await fetch('http://localhost:8000/logs/', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Authorization': `Bearer ${authToken}` },
       });
-      if (!response.ok) {
-        if (response.status === 401) {
-            localStorage.removeItem('token');
-            navigate('/');
-            throw new Error('Unauthorized. Please log in again.');
-        }
-        throw new Error(`Failed to fetch logs. Status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`SysLogs: ${response.status} ${await response.text()}`);
       const data = await response.json();
       const sortedData = (Array.isArray(data) ? data : []).sort((a, b) => {
-        const dateA = parseLogTimestamp(a.log_description);
-        const dateB = parseLogTimestamp(b.log_description);
+        const dateA = parseSystemLogTimestamp(a.log_description);
+        const dateB = parseSystemLogTimestamp(b.log_description);
         if (dateA && dateB) return dateB - dateA;
-        return b.id - a.id;
+        return (b.id || 0) - (a.id || 0);
       });
-      setLogs(sortedData);
+      setSystemLogs(sortedData);
     } catch (err) {
-      console.error("Error fetching logs:", err);
-      setError(err.message);
-      setLogs([]);
+      console.error("Error fetching system logs:", err);
+      setSystemLogsError(err.message);
     } finally {
-      setIsLoading(false);
+      setSystemLogsLoading(false);
     }
   };
 
-  const availableLogTypes = useMemo(() => {
-    const types = new Set();
-    logs.forEach(log => {
-      types.add(extractLogType(log.log_description));
-    });
-    return Array.from(types).sort();
-  }, [logs]);
-
-  const filteredLogs = useMemo(() => {
-    return logs.filter(log => {
-      const matchesUsername = usernameFilter
-        ? log.user_username && log.user_username.toLowerCase().includes(usernameFilter.toLowerCase())
-        : true;
-      
-      const matchesLogType = logTypeFilter
-        ? extractLogType(log.log_description) === logTypeFilter
-        : true;
-
-      const logDate = parseLogTimestamp(log.log_description);
+  // --- Fetching Logic for Interface Logs ---
+  const fetchInterfaceLogs = async (authToken) => {
+    setInterfaceLogsLoading(true);
+    setInterfaceLogsError(null);
+    try {
+      // IMPORTANT: Adjust this URL to your actual InterfaceLogs endpoint
+      const response = await fetch('http://localhost:8000/interface-logs/', {
+        headers: { 'Authorization': `Bearer ${authToken}` },
+      });
+      if (!response.ok) throw new Error(`InterfaceLogs: ${response.status} ${await response.text()}`);
+      const data = await response.json();
+      // Assuming InterfaceLog has a 'timestamp' field that's a sortable date string or number
+      const sortedData = (Array.isArray(data) ? data : []).sort((a, b) => {
+          const dateA = new Date(a.timestamp);
+          const dateB = new Date(b.timestamp);
+          if (!isNaN(dateA) && !isNaN(dateB)) return dateB - dateA;
+          return (b.id || 0) - (a.id || 0); // Fallback to ID
+      });
+      setInterfaceLogs(sortedData);
+    } catch (err) {
+      console.error("Error fetching interface logs:", err);
+      setInterfaceLogsError(err.message);
+    } finally {
+      setInterfaceLogsLoading(false);
+    }
+  };
+  
+  // --- Memoized Filters for System Logs ---
+  const availableSystemLogTypes = useMemo(() => Array.from(new Set(systemLogs.map(log => extractSystemLogType(log.log_description)))).sort(), [systemLogs]);
+  const filteredSystemLogs = useMemo(() => {
+    return systemLogs.filter(log => {
+      const matchesUsername = sysUsernameFilter ? (log.user_username || '').toLowerCase().includes(sysUsernameFilter.toLowerCase()) : true;
+      const matchesLogType = sysLogTypeFilter ? extractSystemLogType(log.log_description) === sysLogTypeFilter : true;
+      const logDate = parseSystemLogTimestamp(log.log_description);
       let matchesDate = true;
       if (logDate) {
-        if (startDateFilter) {
-          const filterStartDate = new Date(startDateFilter);
-          filterStartDate.setHours(0, 0, 0, 0);
-          if (logDate < filterStartDate) {
-            matchesDate = false;
-          }
+        if (sysStartDateFilter) {
+          const filterDate = new Date(sysStartDateFilter); filterDate.setHours(0,0,0,0);
+          if (logDate < filterDate) matchesDate = false;
         }
-        if (endDateFilter && matchesDate) {
-          const filterEndDate = new Date(endDateFilter);
-          filterEndDate.setHours(23, 59, 59, 999);
-          if (logDate > filterEndDate) {
-            matchesDate = false;
-          }
+        if (sysEndDateFilter && matchesDate) {
+          const filterDate = new Date(sysEndDateFilter); filterDate.setHours(23,59,59,999);
+          if (logDate > filterDate) matchesDate = false;
         }
-      } else if (startDateFilter || endDateFilter) {
-        matchesDate = false;
-      }
-      
+      } else if (sysStartDateFilter || sysEndDateFilter) matchesDate = false;
       return matchesUsername && matchesLogType && matchesDate;
     });
-  }, [logs, usernameFilter, logTypeFilter, startDateFilter, endDateFilter]);
+  }, [systemLogs, sysUsernameFilter, sysLogTypeFilter, sysStartDateFilter, sysEndDateFilter]);
 
-  const handleClearFilters = () => {
-    setUsernameFilter('');
-    setLogTypeFilter('');
-    setStartDateFilter('');
-    setEndDateFilter('');
+  // --- Memoized Filters for Interface Logs ---
+  const availableIfaceAlterationTypes = useMemo(() => Array.from(new Set(interfaceLogs.map(log => log.alteration_type).filter(Boolean))).sort(), [interfaceLogs]);
+  const availableIfaceInterfaces = useMemo(() => Array.from(new Set(interfaceLogs.map(log => log.interface).filter(Boolean))).sort(), [interfaceLogs]);
+  const availableIfaceProjects = useMemo(() => Array.from(new Set(interfaceLogs.map(log => log.project).filter(Boolean))).sort(), [interfaceLogs]);
+
+  const filteredInterfaceLogs = useMemo(() => {
+    return interfaceLogs.filter(log => {
+      const matchesUsername = ifaceUsernameFilter ? (log.user_username || '').toLowerCase().includes(ifaceUsernameFilter.toLowerCase()) : true;
+      const matchesAlterationType = ifaceAlterationTypeFilter ? log.alteration_type === ifaceAlterationTypeFilter : true;
+      const matchesDidFail = ifaceDidFailFilter === '' ? true : String(log.didFail) === ifaceDidFailFilter;
+      const matchesInterface = ifaceInterfaceFilter ? log.interface === ifaceInterfaceFilter : true;
+      const matchesProject = ifaceProjectFilter ? log.project === ifaceProjectFilter : true;
+      
+      const logDate = log.timestamp ? new Date(log.timestamp) : null;
+      let matchesDate = true;
+      if (logDate && !isNaN(logDate)) {
+        if (ifaceStartDateFilter) {
+          const filterDate = new Date(ifaceStartDateFilter); filterDate.setHours(0,0,0,0);
+          if (logDate < filterDate) matchesDate = false;
+        }
+        if (ifaceEndDateFilter && matchesDate) {
+          const filterDate = new Date(ifaceEndDateFilter); filterDate.setHours(23,59,59,999);
+          if (logDate > filterDate) matchesDate = false;
+        }
+      } else if (ifaceStartDateFilter || ifaceEndDateFilter) matchesDate = false; // If date filter applied, but log has no valid date
+
+      return matchesUsername && matchesAlterationType && matchesDidFail && matchesInterface && matchesProject && matchesDate;
+    });
+  }, [interfaceLogs, ifaceUsernameFilter, ifaceAlterationTypeFilter, ifaceDidFailFilter, ifaceInterfaceFilter, ifaceProjectFilter, ifaceStartDateFilter, ifaceEndDateFilter]);
+
+
+  // --- Clear Filters ---
+  const handleClearSystemLogFilters = () => {
+    setSysUsernameFilter(''); setSysLogTypeFilter(''); setSysStartDateFilter(''); setSysEndDateFilter('');
+  };
+  const handleClearInterfaceLogFilters = () => {
+    setIfaceUsernameFilter(''); setIfaceAlterationTypeFilter(''); setIfaceDidFailFilter('');
+    setIfaceInterfaceFilter(''); setIfaceProjectFilter(''); setIfaceStartDateFilter(''); setIfaceEndDateFilter('');
   };
 
-  const exportToCSV = () => {
-    if (filteredLogs.length === 0) {
-      alert("No logs to export.");
-      return;
+  const scrollToSystemLogs = () => {
+    const systemLogsSection = document.getElementById('system-logs-section');
+    if (systemLogsSection) {
+      systemLogsSection.scrollIntoView({ behavior: 'smooth' });
     }
-    const headers = ["ID", "Username", "Action", "Timestamp", "Full Description"];
+  };
+
+  // --- Export Functions ---
+  const genericExportToCSV = (logs, filename, headers, rowMapper) => {
+    if (logs.length === 0) { alert("No logs to export."); return; }
     const csvRows = [
       headers.join(','),
-      ...filteredLogs.map(log => [
-        log.id,
-        `"${log.user_username || ''}"`,
-        `"${extractLogType(log.log_description) || ''}"`,
-        `"${extractTimestampString(log.log_description) || ''}"`,
-        `"${(log.log_description || '').replace(/"/g, '""')}"`
-      ].join(','))
+      ...logs.map(rowMapper)
     ];
-    
     const csvString = csvRows.join('\n');
     const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', 'logs.csv');
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  const exportToPDF = () => {
-    if (filteredLogs.length === 0) {
-      alert("No logs to export.");
-      return;
-    }
-    const doc = new jsPDF(); // Create a new jsPDF instance
-    
-    doc.text("System Logs", 14, 16); // Add a title to the PDF
-    
-    const tableColumn = ["ID", "Username", "Action", "Timestamp", "Description"];
-    const tableRows = [];
-
-    filteredLogs.forEach(log => {
-      const logData = [
-        log.id,
-        log.user_username || "N/A", // Handle potentially undefined username
-        extractLogType(log.log_description),
-        extractTimestampString(log.log_description),
-        log.log_description
-      ];
-      tableRows.push(logData);
+  const genericExportToPDF = (logs, filename, title, tableColumns, rowMapper) => {
+    if (logs.length === 0) { alert("No logs to export."); return; }
+    const doc = new jsPDF();
+    doc.text(title, 14, 16);
+    autoTable(doc, {
+      head: [tableColumns.map(col => col.header)],
+      body: logs.map(rowMapper),
+      startY: 20,
+      theme: 'striped',
+      styles: { fontSize: 8, cellPadding: 1.5 }, // Adjusted cellPadding
+      headStyles: { fillColor: [22, 160, 133] },
+      columnStyles: tableColumns.reduce((acc, col, index) => {
+        if(col.width) acc[index] = { cellWidth: col.width };
+        return acc;
+      }, {})
     });
-
-    // Call autoTable as a function, passing the doc instance
-    autoTable(doc, { 
-      head: [tableColumn],
-      body: tableRows,
-      startY: 20, // Y position to start the table
-      theme: 'striped', // 'striped', 'grid', 'plain'
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [22, 160, 133] }, // Example: a teal color for header
-      columnStyles: {
-        0: { cellWidth: 10 }, // ID column width
-        1: { cellWidth: 30 }, // Username column width
-        2: { cellWidth: 40 }, // Action column width
-        3: { cellWidth: 40 }, // Timestamp column width
-        // Description column will take the remaining width automatically
-      },
-      // Use didDrawCell to handle potential text overflow in the description
-      didDrawCell: (data) => {
-        // For the description column (index 4), if it's not in the header
-        if (data.column.index === 4 && data.cell.section === 'body') {
-            // Check if text overflows, jsPDF-autoTable might handle some wrapping by default with cellWidth
-            // but for very long text, you might need more advanced handling if issues persist.
-            // This basic example relies on autoTable's default behavior with columnStyles.
-        }
-      }
-    });
-    doc.save('logs.pdf'); // Save the PDF
+    doc.save(filename);
   };
 
+  // System Log Exporters
+  const exportSystemLogsToCSV = () => genericExportToCSV(
+    filteredSystemLogs, 'system_logs.csv',
+    ["ID", "Username", "Action", "Timestamp", "Full Description"],
+    log => [
+      log.id, `"${log.user_username || ''}"`, `"${extractSystemLogType(log.log_description) || ''}"`,
+      `"${extractSystemLogTimestampString(log.log_description) || ''}"`, `"${(log.log_description || '').replace(/"/g, '""')}"`
+    ].join(',')
+  );
+  const exportSystemLogsToPDF = () => genericExportToPDF(
+    filteredSystemLogs, 'system_logs.pdf', "System Logs",
+    [
+      { header: "ID", dataKey: "id", width: 10 }, { header: "Username", dataKey: "user_username", width: 30 },
+      { header: "Action", dataKey: "action", width: 40 }, { header: "Timestamp", dataKey: "timestamp_str", width: 40 },
+      { header: "Description", dataKey: "log_description" } // auto width
+    ],
+    log => [ log.id, log.user_username, extractSystemLogType(log.log_description), extractSystemLogTimestampString(log.log_description), log.log_description ]
+  );
+
+  // Interface Log Exporters
+  const exportInterfaceLogsToCSV = () => genericExportToCSV(
+    filteredInterfaceLogs, 'interface_logs.csv',
+    ["ID", "Username", "Alteration Type", "Failed", "Interface", "Project", "Timestamp", "Description"],
+    log => [
+      log.id, `"${log.user_username || ''}"`, `"${log.alteration_type || ''}"`, log.didFail,
+      `"${log.interface || ''}"`, `"${log.project || ''}"`, `"${formatDate(log.timestamp ? new Date(log.timestamp) : null)}"`,
+      `"${(log.log_description || '').replace(/"/g, '""')}"`
+    ].join(',')
+  );
+  const exportInterfaceLogsToPDF = () => genericExportToPDF(
+    filteredInterfaceLogs, 'interface_logs.pdf', "Interface Activity Logs",
+    [
+      { header: "ID", dataKey: "id", width: 10 }, { header: "User", dataKey: "user_username", width: 25 },
+      { header: "Type", dataKey: "alteration_type", width: 25 }, { header: "Failed", dataKey: "didFail", width: 15 },
+      { header: "Interface", dataKey: "interface", width: 25 }, { header: "Project", dataKey: "project", width: 20 },
+      { header: "Timestamp", dataKey: "timestamp", width: 30 }, { header: "Description", dataKey: "log_description" }
+    ],
+    log => [ log.id, log.user_username, log.alteration_type, log.didFail ? 'Yes' : 'No', log.interface, log.project, formatDate(log.timestamp ? new Date(log.timestamp) : null), log.log_description ]
+  );
 
   return (
     <div className="log-monitoring-page">
       <AdminHeader page="Monitoring" />
-      <main className="log-monitoring-main">
-        <div className="logs-container">
-          <h1 className="logs-header">System Logs</h1>
 
+      {/* --- Interface Logs Section --- */}
+      <main className="log-monitoring-main interface-logs-main">
+        <div className="logs-container">
+          <div className="section-header-controls"> {/* New container for header and button */}
+            <h1 className="logs-header">Interface Activity Logs</h1>
+            <button onClick={scrollToSystemLogs} className="scroll-to-button">
+              Go to System Event Logs &#x21E9; {/* Downwards arrow */}
+            </button>
+          </div>
           <div className="filters-section">
-            <div className="filter-grid">
-              {/* Row 1 of filters */}
+            <div className="filter-grid filter-grid-interface"> 
               <div className="filter-group">
-                <label htmlFor="usernameFilter">Filter by Username</label>
-                <input
-                  type="text"
-                  id="usernameFilter"
-                  value={usernameFilter}
-                  onChange={(e) => setUsernameFilter(e.target.value)}
-                  placeholder="Enter username"
-                  className="filter-input"
-                />
+                <label htmlFor="ifaceUsernameFilter">Username</label>
+                <input type="text" id="ifaceUsernameFilter" value={ifaceUsernameFilter} onChange={(e) => setIfaceUsernameFilter(e.target.value)} placeholder="Username" className="filter-input"/>
               </div>
               <div className="filter-group">
-                <label htmlFor="logTypeFilter">Filter by Log Type</label>
-                <select
-                  id="logTypeFilter"
-                  value={logTypeFilter}
-                  onChange={(e) => setLogTypeFilter(e.target.value)}
-                  className="filter-select"
-                >
-                  <option value="">All Log Types</option>
-                  {availableLogTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
+                <label htmlFor="ifaceAlterationTypeFilter">Alteration Type</label>
+                <select id="ifaceAlterationTypeFilter" value={ifaceAlterationTypeFilter} onChange={(e) => setIfaceAlterationTypeFilter(e.target.value)} className="filter-select">
+                  <option value="">All Types</option>
+                  {availableIfaceAlterationTypes.map(type => <option key={type} value={type}>{type}</option>)}
                 </select>
               </div>
-               <div className="filter-group"> {/* Placeholder for alignment */} </div>
-
-
-              {/* Row 2 of filters - Date Filters */}
               <div className="filter-group">
-                <label htmlFor="startDateFilter">Start Date</label>
-                <input
-                  type="date"
-                  id="startDateFilter"
-                  value={startDateFilter}
-                  onChange={(e) => setStartDateFilter(e.target.value)}
-                  className="filter-input"
-                />
+                <label htmlFor="ifaceDidFailFilter">Status</label>
+                <select id="ifaceDidFailFilter" value={ifaceDidFailFilter} onChange={(e) => setIfaceDidFailFilter(e.target.value)} className="filter-select">
+                  <option value="">All</option>
+                  <option value="true">Failed</option>
+                  <option value="false">Success</option>
+                </select>
               </div>
               <div className="filter-group">
-                <label htmlFor="endDateFilter">End Date</label>
-                <input
-                  type="date"
-                  id="endDateFilter"
-                  value={endDateFilter}
-                  onChange={(e) => setEndDateFilter(e.target.value)}
-                  className="filter-input"
-                />
+                <label htmlFor="ifaceInterfaceFilter">Interface</label>
+                <select id="ifaceInterfaceFilter" value={ifaceInterfaceFilter} onChange={(e) => setIfaceInterfaceFilter(e.target.value)} className="filter-select">
+                  <option value="">All Interfaces</option>
+                  {availableIfaceInterfaces.map(item => <option key={item} value={item}>{item}</option>)}
+                </select>
               </div>
-               {/* Clear Filters Button */}
-               <div className="filter-group clear-filters-container">
-                 <button
-                    onClick={handleClearFilters}
-                    className="clear-filters-button"
-                  >
-                    Clear All Filters
-                  </button>
-               </div>
+              <div className="filter-group">
+                <label htmlFor="ifaceProjectFilter">Project</label>
+                 <select id="ifaceProjectFilter" value={ifaceProjectFilter} onChange={(e) => setIfaceProjectFilter(e.target.value)} className="filter-select">
+                  <option value="">All Projects</option>
+                  {availableIfaceProjects.map(item => <option key={item} value={item}>{item}</option>)}
+                </select>
+              </div>
+               <div className="filter-group"> {/* Spacer */} </div>
+              <div className="filter-group">
+                <label htmlFor="ifaceStartDateFilter">Start Date</label>
+                <input type="date" id="ifaceStartDateFilter" value={ifaceStartDateFilter} onChange={(e) => setIfaceStartDateFilter(e.target.value)} className="filter-input"/>
+              </div>
+              <div className="filter-group">
+                <label htmlFor="ifaceEndDateFilter">End Date</label>
+                <input type="date" id="ifaceEndDateFilter" value={ifaceEndDateFilter} onChange={(e) => setIfaceEndDateFilter(e.target.value)} className="filter-input"/>
+              </div>
+              <div className="filter-group clear-filters-container">
+                <button onClick={handleClearInterfaceLogFilters} className="clear-filters-button">Clear Interface Filters</button>
+              </div>
             </div>
           </div>
-
-          {/* Export Buttons */}
           <div className="export-buttons-section">
-            <button onClick={exportToCSV} className="export-button csv-button">
-              Export as CSV
-            </button>
-            <button onClick={exportToPDF} className="export-button pdf-button">
-              Export as PDF
-            </button>
+            <button onClick={exportInterfaceLogsToCSV} className="export-button csv-button">Export CSV</button>
+            <button onClick={exportInterfaceLogsToPDF} className="export-button pdf-button">Export PDF</button>
           </div>
-
-
-          {isLoading && (
-            <div className="loading-indicator">
-              <div className="spinner"></div>
-              <p>Loading logs...</p>
-            </div>
+          {interfaceLogsLoading && <div className="loading-indicator"><div className="spinner"></div><p>Loading interface logs...</p></div>}
+          {!interfaceLogsLoading && interfaceLogsError && <div className="error-message"><p><strong>Error:</strong> {interfaceLogsError}</p><button onClick={()=>fetchInterfaceLogs(token)} className="retry-button">Retry</button></div>}
+          {!interfaceLogsLoading && !interfaceLogsError && (
+            <>
+              <div className="logs-table-container">
+                <table className="logs-table">
+                  <thead className="logs-table-header-group">
+                    <tr>
+                      <th className="logs-table-header">ID</th>
+                      <th className="logs-table-header">User</th>
+                      <th className="logs-table-header">Timestamp</th>
+                      <th className="logs-table-header">Alter. Type</th>
+                      <th className="logs-table-header">Interface</th>
+                      <th className="logs-table-header">Project</th>
+                      <th className="logs-table-header">Status</th>
+                      <th className="logs-table-header">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody className="logs-table-body">
+                    {filteredInterfaceLogs.length > 0 ? filteredInterfaceLogs.map(log => (
+                      <tr key={log.id} className="logs-table-row">
+                        <td className="logs-table-cell">{log.id}</td>
+                        <td className="logs-table-cell">{log.user_username}</td>
+                        <td className="logs-table-cell">{formatDate(log.timestamp ? new Date(log.timestamp) : null)}</td>
+                        <td className="logs-table-cell">{log.alteration_type}</td>
+                        <td className="logs-table-cell">{log.interface}</td>
+                        <td className="logs-table-cell">{log.project}</td>
+                        <td className="logs-table-cell">{log.didFail ? 'Failed' : 'Success'}</td>
+                        <td className="logs-table-cell logs-table-cell-description">{log.log_description}</td>
+                      </tr>
+                    )) : (
+                      <tr><td colSpan="8" className="no-logs-message">No interface logs found.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <div className="logs-count-message">Showing {filteredInterfaceLogs.length} of {interfaceLogs.length} interface logs.</div>
+            </>
           )}
+        </div>
+      </main>
 
-          {!isLoading && error && (
-            <div className="error-message">
-              <p><strong>Error</strong></p>
-              <p>{error}</p>
-              <button
-                onClick={() => fetchLogs(localStorage.getItem('token'))}
-                className="retry-button"
-              >
-                Retry
-              </button>
+      {/* --- System Logs Section (Existing) --- */}
+      {/* Added id="system-logs-section" here */}
+      <main id="system-logs-section" className="log-monitoring-main system-logs-main">
+        <div className="logs-container">
+          <h1 className="logs-header">System Event Logs</h1>
+           <div className="filters-section">
+            <div className="filter-grid"> 
+              <div className="filter-group">
+                <label htmlFor="sysUsernameFilter">Username</label>
+                <input type="text" id="sysUsernameFilter" value={sysUsernameFilter} onChange={(e) => setSysUsernameFilter(e.target.value)} placeholder="Username" className="filter-input"/>
+              </div>
+              <div className="filter-group">
+                <label htmlFor="sysLogTypeFilter">Log Type</label>
+                <select id="sysLogTypeFilter" value={sysLogTypeFilter} onChange={(e) => setSysLogTypeFilter(e.target.value)} className="filter-select">
+                  <option value="">All Types</option>
+                  {availableSystemLogTypes.map(type => <option key={type} value={type}>{type}</option>)}
+                </select>
+              </div>
+              <div className="filter-group"> {/* Spacer */} </div>
+              <div className="filter-group">
+                <label htmlFor="sysStartDateFilter">Start Date</label>
+                <input type="date" id="sysStartDateFilter" value={sysStartDateFilter} onChange={(e) => setSysStartDateFilter(e.target.value)} className="filter-input"/>
+              </div>
+              <div className="filter-group">
+                <label htmlFor="sysEndDateFilter">End Date</label>
+                <input type="date" id="sysEndDateFilter" value={sysEndDateFilter} onChange={(e) => setSysEndDateFilter(e.target.value)} className="filter-input"/>
+              </div>
+              <div className="filter-group clear-filters-container">
+                <button onClick={handleClearSystemLogFilters} className="clear-filters-button">Clear System Filters</button>
+              </div>
             </div>
-          )}
-
-          {!isLoading && !error && (
+          </div>
+          <div className="export-buttons-section">
+            <button onClick={exportSystemLogsToCSV} className="export-button csv-button">Export CSV</button>
+            <button onClick={exportSystemLogsToPDF} className="export-button pdf-button">Export PDF</button>
+          </div>
+          {systemLogsLoading && <div className="loading-indicator"><div className="spinner"></div><p>Loading system logs...</p></div>}
+          {!systemLogsLoading && systemLogsError && <div className="error-message"><p><strong>Error:</strong> {systemLogsError}</p><button onClick={()=>fetchSystemLogs(token)} className="retry-button">Retry</button></div>}
+          {!systemLogsLoading && !systemLogsError && (
             <>
               <div className="logs-table-container">
                 <table className="logs-table">
@@ -376,31 +458,21 @@ export default function Monitoring() {
                     </tr>
                   </thead>
                   <tbody className="logs-table-body">
-                    {filteredLogs.length > 0 ? (
-                      filteredLogs.map(log => (
-                        <tr key={log.id} className="logs-table-row">
-                          <td className="logs-table-cell">{log.id}</td>
-                          <td className="logs-table-cell">{log.user_username}</td>
-                          <td className="logs-table-cell logs-table-cell-action">{extractLogType(log.log_description)}</td>
-                          <td className="logs-table-cell">{extractTimestampString(log.log_description)}</td>
-                          <td className="logs-table-cell logs-table-cell-description">{log.log_description}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="5" className="no-logs-message">
-                          No logs found matching your criteria.
-                        </td>
+                    {filteredSystemLogs.length > 0 ? filteredSystemLogs.map(log => (
+                      <tr key={log.id} className="logs-table-row">
+                        <td className="logs-table-cell">{log.id}</td>
+                        <td className="logs-table-cell">{log.user_username}</td>
+                        <td className="logs-table-cell logs-table-cell-action">{extractSystemLogType(log.log_description)}</td>
+                        <td className="logs-table-cell">{extractSystemLogTimestampString(log.log_description)}</td>
+                        <td className="logs-table-cell logs-table-cell-description">{log.log_description}</td>
                       </tr>
+                    )) : (
+                      <tr><td colSpan="5" className="no-logs-message">No system logs found.</td></tr>
                     )}
                   </tbody>
                 </table>
               </div>
-              {!isLoading && !error && logs.length > 0 && (
-                <div className="logs-count-message">
-                  Showing {filteredLogs.length} of {logs.length} total logs.
-                </div>
-              )}
+               <div className="logs-count-message">Showing {filteredSystemLogs.length} of {systemLogs.length} system logs.</div>
             </>
           )}
         </div>
