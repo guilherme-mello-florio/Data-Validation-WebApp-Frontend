@@ -22,6 +22,7 @@ function ForgotPassword() {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
+    const apiUrl = process.env.REACT_APP_API_URL;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -30,7 +31,7 @@ function ForgotPassword() {
         setError('');
 
         try {
-            const response = await fetch('http://localhost:8000/forgot-password', { // Your backend URL
+            const response = await fetch(`${apiUrl}/forgot-password`, { // Your backend URL
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -62,7 +63,7 @@ function ForgotPassword() {
             };
 
             // Log password reset attempt
-            const log_response = await fetch('http://localhost:8000/logs/', {   
+            const log_response = await fetch(`${apiUrl}/logs/`, {   
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

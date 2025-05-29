@@ -9,6 +9,7 @@ function ProtectedPageCheckConnectedDevices() {
   const [username, setUsername] = useState('');
 
   const navigate = useNavigate();
+  const apiUrl = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
           setUsername(localStorage.getItem('username'));
@@ -16,7 +17,7 @@ function ProtectedPageCheckConnectedDevices() {
           const verifyToken = async () => {
               const token = localStorage.getItem('token');
               try {
-                  const response = await fetch('http://localhost:8000/verify-token/' + token);
+                  const response = await fetch(`${apiUrl}/verify-token/${token}`);
   
                   if (!response.ok) {
                       throw new Error('Token verification failed');
@@ -37,7 +38,7 @@ function ProtectedPageCheckConnectedDevices() {
     try {
         const token = localStorage.getItem("token");
       
-        const response = await fetch("http://localhost:8000/api/user/sessions", {
+        const response = await fetch(`${apiUrl}/api/user/sessions`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -71,7 +72,7 @@ function ProtectedPageCheckConnectedDevices() {
     }
     try {
       // Chamar o endpoint DELETE
-      const response = await fetch(`http://localhost:8000/api/user/sessions/${deviceId}`, {
+      const response = await fetch(`${apiUrl}/api/user/sessions/${deviceId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -92,7 +93,7 @@ function ProtectedPageCheckConnectedDevices() {
   };
 
   async function back (){
-    const user_response = await fetch('http://localhost:8000/users/' + username, {
+    const user_response = await fetch(`${apiUrl}/users/${username}`, {
         method: 'GET',
     })  
 

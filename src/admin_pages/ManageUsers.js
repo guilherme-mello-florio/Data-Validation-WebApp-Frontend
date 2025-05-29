@@ -5,12 +5,13 @@ import { useNavigate } from 'react-router-dom';
 export default function ManageUsers(){
 
     const navigate = useNavigate();
+    const apiUrl = process.env.REACT_APP_API_URL;
     
         useEffect(() => {
                 const verifyToken = async () => {
                     const token = localStorage.getItem('token');
                     try {
-                        const response = await fetch('http://localhost:8000/verify-token/' + token);
+                        const response = await fetch(`${apiUrl}/verify-token/${token}`);
         
                         if (!response.ok) {
                             throw new Error('Token verification failed');

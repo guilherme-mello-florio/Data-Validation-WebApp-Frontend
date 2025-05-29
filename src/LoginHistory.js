@@ -7,9 +7,10 @@ function UserLoginLogoutLog() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [username, setUsername] = useState('');
+  const apiUrl = process.env.REACT_APP_API_URL;
 
   async function back (){
-    const user_response = await fetch('http://localhost:8000/users/' + username, {
+    const user_response = await fetch(`${apiUrl}/users/${username}`, {
         method: 'GET',
     })  
 
@@ -48,7 +49,6 @@ function UserLoginLogoutLog() {
       setError(null);
 
       try {
-        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
         const response = await fetch(`${apiUrl}/logs/login/${storedUsername}`, {
           method: 'GET',
           headers: {

@@ -4,13 +4,14 @@ import logo from './wysupp-logo.svg';
 
 function TwoFactorSetup() {
   const [qrData, setQrData] = useState(null);
+  const apiUrl = process.env.REACT_APP_API_URL;
   
   const username = localStorage.getItem('username');
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch(`http://localhost:8000/2fa/setup/${username}`)
+    fetch(`${apiUrl}/2fa/setup/${username}`)
       .then((res) => {
         console.log("Response:", res); // Debugging
         if (!res.ok) {
@@ -34,7 +35,7 @@ function TwoFactorSetup() {
   function finish2faSetup() {
     if (window.confirm("Are you sure you are done scanning the QR code and setting up 2FA?")) {
 
-        fetch('http://localhost:8000/2fa/setup/save-secret/' + username + '/' + qrData.secret, {
+        fetch(`${apiUrl}/2fa/setup/save-secret/${username}/${qrData.secret}`, {
             method: 'PUT'
             });
 

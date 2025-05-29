@@ -6,6 +6,7 @@ import ProtectedPageCustomer from './Home';
 import ProtectedPageChangePassword from './ChangePassword';
 import ProtectedPageCheckConnectedDevices from './ConnectedDevicesList';
 import ProtectedPageLoginHistory from './LoginHistory';
+import UserEmailPreferences from './EmailPreferences';
 import TwoFactorSetup from './2faSetup';
 import OTPVerification from './OTPVerification';
 import Disable2FA from './Disable2FA';
@@ -49,7 +50,9 @@ function App() {
       localStorage.removeItem('username');
       clearInterval(timeInterval);
 
-      const response = await fetch('http://localhost:8000/logs/', {   
+      const apiUrl = process.env.REACT_APP_API_URL;
+
+      const response = await fetch(`${apiUrl}/logs/`, {   
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -82,6 +85,7 @@ function App() {
         <Route path="/change-password" element={<ProtectedPageChangePassword />} />
         <Route path="/connected-devices" element={<ProtectedPageCheckConnectedDevices />} />
         <Route path="/login-history" element={<ProtectedPageLoginHistory />} />
+        <Route path="/email-preferences" element={<UserEmailPreferences />} />
         <Route path="/2fa-setup" element={<TwoFactorSetup />} />
         <Route path="/otp-verification" element={<OTPVerification />}/>
         <Route path="/disable-2fa" element={<Disable2FA />}/>

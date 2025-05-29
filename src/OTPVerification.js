@@ -6,6 +6,7 @@ function OTPVerification() {
     const [otp, setOtp] = useState('');
 
     const navigate = useNavigate();
+    const apiUrl = process.env.REACT_APP_API_URL;
 
     const handleSubmit = async (event) => {
       event.preventDefault();
@@ -16,14 +17,14 @@ function OTPVerification() {
           otp: otp,
       };
 
-      const user_response = await fetch('http://localhost:8000/users/' + username, {
+      const user_response = await fetch(`${apiUrl}/users/${username}`, {
         method: 'GET',
     })  
     
         if (user_response.ok) {
             const user_data = await user_response.json();
 
-            await fetch('http://localhost:8000/verify-2fa/' + username, {
+            await fetch(`${apiUrl}/verify-2fa/${username}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

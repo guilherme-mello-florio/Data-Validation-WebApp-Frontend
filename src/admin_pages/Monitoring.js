@@ -51,6 +51,7 @@ const formatDate = (dateObj, includeTime = true) => {
 export default function Monitoring() {
   const navigate = useNavigate();
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const apiUrl = process.env.REACT_APP_API_URL;
 
   // --- State for System Logs ---
   const [systemLogs, setSystemLogs] = useState([]);
@@ -84,7 +85,7 @@ export default function Monitoring() {
 
     const verifyTokenAndFetch = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/verify-token/${localToken}`);
+        const response = await fetch(`${apiUrl}/verify-token/${localToken}`);
         if (!response.ok) throw new Error('Token verification failed');
         
         // Fetch both types of logs
@@ -105,7 +106,7 @@ export default function Monitoring() {
     setSystemLogsLoading(true);
     setSystemLogsError(null);
     try {
-      const response = await fetch('http://localhost:8000/logs/', {
+      const response = await fetch(`${apiUrl}/logs/`, {
         headers: { 'Authorization': `Bearer ${authToken}` },
       });
       if (!response.ok) throw new Error(`SysLogs: ${response.status} ${await response.text()}`);
@@ -131,7 +132,7 @@ export default function Monitoring() {
     setInterfaceLogsError(null);
     try {
       // IMPORTANT: Adjust this URL to your actual InterfaceLogs endpoint
-      const response = await fetch('http://localhost:8000/interface-logs/', {
+      const response = await fetch(`${apiUrl}/interface-logs/`, {
         headers: { 'Authorization': `Bearer ${authToken}` },
       });
       if (!response.ok) throw new Error(`InterfaceLogs: ${response.status} ${await response.text()}`);

@@ -30,6 +30,10 @@ function AccountInfo({ username }) {
         navigate("/login-history");
     }
 
+    function emailPreferences() {
+        navigate("/email-preferences");
+    }
+
     return (
         <div>
             <div className='account_info'>
@@ -47,6 +51,7 @@ function AccountInfo({ username }) {
                     <div className='settings_change_password' onClick={changePassword}>Change password</div>
                     <div className='settings_change_password' onClick={checkConnectedDevices}>Check connected devices</div>
                     <div className='settings_change_password' onClick={loginHistory}>Login history</div>
+                    <div className='settings_change_password' onClick={emailPreferences}>E-mail Preferences</div>
                     <div id='languages_dropdown'>Choose Language ▼
                         <div className='languages_dropdown_content'>
                             <p>Nada aqui ainda!</p>

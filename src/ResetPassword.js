@@ -24,6 +24,7 @@ function ResetPassword() {
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const apiUrl = process.env.REACT_APP_API_URL;
 
     useEffect(() => {
         if (!token) {
@@ -54,7 +55,7 @@ function ResetPassword() {
         setError('');
 
         try {
-            const response = await fetch('http://localhost:8000/reset-password', { // Your backend URL
+            const response = await fetch(`${apiUrl}/reset-password`, { // Your backend URL
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -84,7 +85,7 @@ function ResetPassword() {
             };
 
             // Log password reset attempt
-            const log_response = await fetch('http://localhost:8000/logs/', {   
+            const log_response = await fetch(`${apiUrl}/logs/`, {   
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -111,7 +112,7 @@ function ResetPassword() {
             };
 
             // Log password reset attempt
-            const log_response = await fetch('http://localhost:8000/logs/', {   
+            const log_response = await fetch(`${apiUrl}/logs/`, {   
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

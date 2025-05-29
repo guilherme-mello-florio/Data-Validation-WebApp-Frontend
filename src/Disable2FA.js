@@ -13,6 +13,7 @@ function Disable2FA() {
     const [loginAttempts, setLoginAttempts] = useState(0);
     const [captchaDone, setCaptchaDone] = useState(false);
 
+    const apiUrl = process.env.REACT_APP_API_URL;
 
     let recaptchaRef;
 
@@ -48,7 +49,7 @@ function Disable2FA() {
         formDetails.append('password', password);
 
         try {
-            const response = await fetch('http://localhost:8000/token', {   
+            const response = await fetch(`${apiUrl}/token`, {   
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -56,11 +57,11 @@ function Disable2FA() {
                 body: formDetails,
             });
 
-            const user_response = await fetch('http://localhost:8000/users/' + username, {
+            const user_response = await fetch(`${apiUrl}/users/${username}`, {
                 method: 'GET',
             })
 
-            await fetch('http://localhost:8000/2fa/disable/' + username, {
+            await fetch(`${apiUrl}/2fa/disable/${username}`, {
                 method: 'PUT',
         })
 
@@ -79,7 +80,7 @@ function Disable2FA() {
                 };
 
                 // Envio do log de desabilitalçao de 2FA
-                const log_response = await fetch('http://localhost:8000/logs/', {
+                const log_response = await fetch(`${apiUrl}/logs/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

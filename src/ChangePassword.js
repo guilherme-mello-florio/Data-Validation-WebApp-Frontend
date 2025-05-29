@@ -23,6 +23,7 @@ function ProtectedPageChangePassword() {
     const [lengthValidated, setLengthValidated]=useState(false);
 
     const navigate = useNavigate();
+    const apiUrl = process.env.REACT_APP_API_URL;
 
 
     // Validate form fields
@@ -56,7 +57,7 @@ function ProtectedPageChangePassword() {
 
         try {
 
-            const response = await fetch('http://localhost:8000/token/change-password', {   
+            const response = await fetch(`${apiUrl}/token/change-password`, {   
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -64,7 +65,7 @@ function ProtectedPageChangePassword() {
                 body: formDetails,
             });
 
-            const user_response = await fetch('http://localhost:8000/users/' + username + '/change-password', {
+            const user_response = await fetch(`${apiUrl}/users/${username}/change-password`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -73,6 +74,26 @@ function ProtectedPageChangePassword() {
             });
 
             if (response.ok && user_response.ok) {
+
+                const userIp = await fetch('https://api.ipify.org?format=json')
+                .then(response => response.json())
+                .then(data => data.ip)
+                .catch(() => 'unknown IP');
+
+            const passwordChangeRequestDetails = {
+                log_description: `User has changed their password at ${new Date()} from IP address: ${userIp}`,
+                user_username: username,
+            };
+
+            // Log password reset attempt
+            const log_response = await fetch(`${apiUrl}/logs/`, {   
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(passwordChangeRequestDetails),
+            });
+
                 const data = await response.json();
                 localStorage.removeItem('token');
 
@@ -134,7 +155,7 @@ function ProtectedPageChangePassword() {
       }
 
       async function back (){
-        const user_response = await fetch('http://localhost:8000/users/' + username, {
+        const user_response = await fetch(`${apiUrl}/users/${username}`, {
             method: 'GET',
         })  
 

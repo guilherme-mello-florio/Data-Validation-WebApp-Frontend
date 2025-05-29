@@ -14,7 +14,7 @@ function Login() {
     const [loginAttempts, setLoginAttempts] = useState(0);
     const [captchaDone, setCaptchaDone] = useState(false);
 
-
+    const apiUrl = process.env.REACT_APP_API_URL;
     let recaptchaRef = useRef(null);
 
     useEffect(() => {
@@ -52,7 +52,7 @@ function Login() {
         formDetails.append('password', password);
 
         try {
-            const response = await fetch('http://localhost:8000/token', {   
+            const response = await fetch(`${apiUrl}/token`, {   
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -60,7 +60,7 @@ function Login() {
                 body: formDetails,
             });
 
-            const user_response = await fetch('http://localhost:8000/users/' + username, {
+            const user_response = await fetch(`${apiUrl}/users/${username}`, {
                 method: 'GET',
             })  
 
@@ -83,7 +83,7 @@ function Login() {
                     user_username: username,
                   };
 
-                const log_response = await fetch('http://localhost:8000/logs/', {   
+                const log_response = await fetch(`${apiUrl}/logs/`, {   
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -107,7 +107,7 @@ function Login() {
                   };
 
                 // Envio do log de login
-                const log_response = await fetch('http://localhost:8000/logs/', {   
+                const log_response = await fetch(`${apiUrl}/logs/`, {   
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -142,7 +142,6 @@ function Login() {
         } catch (error) {
             console.log(error);
             setLoading(false);
-            console.log(error);
             setError('An error has ocurred. Please try again later.');
         }
     };
