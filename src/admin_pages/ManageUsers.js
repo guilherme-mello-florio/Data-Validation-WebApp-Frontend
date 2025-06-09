@@ -23,7 +23,7 @@ export default function ManageUsers(){
                 };
         
                 verifyToken();
-            }, [navigate, apiUrl]);
+            }, [navigate]);
 
     function createuser(){
         navigate('/admin/manage-users/create-user')
