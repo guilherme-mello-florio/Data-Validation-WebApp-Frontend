@@ -108,17 +108,10 @@ function Disable2FA() {
     };
         }
 
-
-    function back() {
-        navigate('/home');
-    }
-
-
-
     return (
         <div className="connected_devices_body">
             <header className='connected_devices_header'>
-                <div className='back_button' onClick={back}>◄ Back</div>
+                <div className='back_button' onClick={() => window.history.back()}>◄ Back</div>
                 <img src={logo} />
             </header>
             <h3>Please, authenticate in order to disable Two-Factor Authentication</h3>

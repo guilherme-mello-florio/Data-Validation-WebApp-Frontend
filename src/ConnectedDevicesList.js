@@ -92,29 +92,13 @@ function ProtectedPageCheckConnectedDevices() {
     }
   };
 
-  async function back (){
-    const user_response = await fetch(`${apiUrl}/users/${username}`, {
-        method: 'GET',
-    })  
-
-    if (user_response.ok) {
-        const data = await user_response.json();
-        console.log(data);
-    if (data.role == "admin") {
-        navigate('/admin');
-    } else if (data.role == "customer") {
-        navigate('/home');
-  }
-    }
-}
-
   if (loading) return <p>Carregando dispositivos...</p>;
   if (error) return <p>Erro ao carregar dispositivos: {error}</p>;
 
   return (
     <div className='connected_devices_body'>
         <header className='connected_devices_header'>
-        <div className='back_button' onClick={back}>◄ Back</div>
+        <div className='back_button' onClick={() => window.history.back()}>◄ Back</div>
             <img src={logo} />
         </header>
       <h2>Connected Devices</h2>

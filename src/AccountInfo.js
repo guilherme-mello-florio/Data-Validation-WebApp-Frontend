@@ -54,7 +54,7 @@ function AccountInfo({ username }) {
                     <div className='settings_change_password' onClick={emailPreferences}>E-mail Preferences</div>
                     <div id='languages_dropdown'>Choose Language ▼
                         <div className='languages_dropdown_content'>
-                            <p>Nada aqui ainda!</p>
+                            <p>Nothing here yet!</p>
                         </div>
                     </div>
                 </div>

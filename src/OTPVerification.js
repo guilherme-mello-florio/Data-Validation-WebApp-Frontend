@@ -35,7 +35,7 @@ function OTPVerification() {
                 if (res.ok) {
                     if (user_data.role == "admin") {
                         navigate('/admin');
-                    } else if (user_data.role == "customer") {
+                    } else if (user_data.role == "editor" || user_data.role == "viewer") {
                         navigate('/home');
                     }
                 } else {

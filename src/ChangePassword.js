@@ -98,6 +98,8 @@ function ProtectedPageChangePassword() {
                 localStorage.removeItem('token');
 
                 alert("Password changed succesfully!");
+
+                setTimeout(() => navigate('/'), 2000);
             } else {
                 const errorData = await response.json();
                 setError(errorData.detail || 'Authentication failed!');
@@ -154,26 +156,10 @@ function ProtectedPageChangePassword() {
         }
       }
 
-      async function back (){
-        const user_response = await fetch(`${apiUrl}/users/${username}`, {
-            method: 'GET',
-        })  
-
-        if (user_response.ok) {
-            const data = await user_response.json();
-            console.log(data);
-        if (data.role == "admin") {
-            navigate('/admin');
-        } else if (data.role == "customer") {
-            navigate('/home');
-      }
-        }
-    }
-
     return(
         <div className='body'>
         <div className='login_deco'>
-            <div className='back_button' onClick={back}>◄ Back</div>
+            <div className='back_button' onClick={() => window.history.back()}>◄ Back</div>
                 <img src={logo} alt="logo" />
         </div>
         <div className='login_body'>

@@ -1,41 +1,92 @@
-import AdminHeader from './AdminHeader';
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import jsPDF from 'jspdf'; // For PDF export
-import autoTable from 'jspdf-autotable'; // Import autoTable as a function
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
-// Import your CSS file if it's separate
+// Import your CSS file
 // import './Monitoring.css'; 
 
+// Placeholder for AdminHeader
+let AdminHeader;
+try {
+  AdminHeader = require('./AdminHeader').default || require('./AdminHeader');
+} catch (e) {
+  console.warn("AdminHeader component not found, using placeholder.");
+  AdminHeader = ({ page }) => (
+    <header className="admin-header-placeholder">
+      <div className="admin-header-container-placeholder">
+        <h1>Admin Dashboard</h1>
+        <h2>Page: {page}</h2>
+      </div>
+    </header>
+  );
+}
 
-// Helper function to extract the main action/type from the log description
+// --- Helper Functions for System Logs ---
+// --- UPDATED to handle new log format ---
 const extractSystemLogType = (description) => {
   if (!description) return "Unknown";
-  const match = description.match(/^(.*?) at /);
-  if (match && match[1]) return match[1].trim();
-  return description.split(" at ")[0].trim();
+
+  // Rule 1: Handle the most specific pattern first: user updates in Portuguese.
+  if (description.includes(" updated the user ")) {
+    return "User Updated";
+  }
+
+  // Rule 1.1: Handle user deletion logs in Portuguese.
+  if (description.includes(" deleted the user ")) {
+    return "User Deleted";
+  }
+
+  // Rule 2: Handle user creation logs that have a dynamic username in parentheses.
+  // This must be checked before the general " at " rule.
+  if (description.includes("User has created a new") && description.includes('(') && description.includes(')')) {
+    return description.split('(')[0].trim();
+  }
+
+  // Rule 3: Handle all other logs that use the " at " separator.
+  // This is a general rule for logs with a timestamp at the end.
+  const atParts = description.split(" at ");
+  if (atParts.length > 1) {
+    return atParts[0].trim();
+  }
+  
+  // Rule 4: Handle user creation logs that might not have an "at" or "()".
+  // This is a fallback for simple creation messages.
+  if (description.includes("User has created a new")) {
+    return description;
+  }
+
+  // Final fallback if no other pattern matches.
+  return "Unknown Log Format";
 };
 
-// Helper function to extract the timestamp string from the log description
 const extractSystemLogTimestampString = (description) => {
   if (!description) return "";
+
+  // NEW: Check for timestamp at the beginning: [YYYY-MM-DD HH:MM:SS]
+  const bracketMatch = description.match(/^\[(.*?)\]/);
+  if (bracketMatch && bracketMatch[1]) {
+    return bracketMatch[1];
+  }
+
+  // OLD: Check for " at " pattern
   const parts = description.split(" at ");
   if (parts.length > 1) return parts.slice(1).join(" at ").replace(/ from IP address: .*/, '').trim();
+  
   return "N/A";
 };
 
-// Helper function to parse log timestamp string into a Date object
 const parseSystemLogTimestamp = (description) => {
   const tsStr = extractSystemLogTimestampString(description);
   if (tsStr === "N/A") return null;
   try { return new Date(tsStr); } catch (e) { console.error("SysLog Date Parse Err:", tsStr, e); return null; }
 };
 
+// --- Helper function to format Date object to string or return N/A ---
 const formatDate = (dateObj, includeTime = true) => {
   if (!dateObj || !(dateObj instanceof Date) || isNaN(dateObj)) {
     return "N/A";
   }
-  // Format to YYYY-MM-DD HH:MM:SS or YYYY-MM-DD
   const year = dateObj.getFullYear();
   const month = String(dateObj.getMonth() + 1).padStart(2, '0');
   const day = String(dateObj.getDate()).padStart(2, '0');
@@ -48,10 +99,10 @@ const formatDate = (dateObj, includeTime = true) => {
   return `${year}-${month}-${day}`;
 };
 
+
 export default function Monitoring() {
   const navigate = useNavigate();
   const [token, setToken] = useState(localStorage.getItem('token'));
-  const apiUrl = process.env.REACT_APP_API_URL;
 
   // --- State for System Logs ---
   const [systemLogs, setSystemLogs] = useState([]);
@@ -68,7 +119,7 @@ export default function Monitoring() {
   const [interfaceLogsError, setInterfaceLogsError] = useState(null);
   const [ifaceUsernameFilter, setIfaceUsernameFilter] = useState('');
   const [ifaceAlterationTypeFilter, setIfaceAlterationTypeFilter] = useState('');
-  const [ifaceDidFailFilter, setIfaceDidFailFilter] = useState(''); // "all", "true", "false"
+  const [ifaceDidFailFilter, setIfaceDidFailFilter] = useState(''); 
   const [ifaceInterfaceFilter, setIfaceInterfaceFilter] = useState('');
   const [ifaceProjectFilter, setIfaceProjectFilter] = useState('');
   const [ifaceStartDateFilter, setIfaceStartDateFilter] = useState('');
@@ -85,10 +136,9 @@ export default function Monitoring() {
 
     const verifyTokenAndFetch = async () => {
       try {
-        const response = await fetch(`${apiUrl}/verify-token/${localToken}`);
+        const response = await fetch(`http://localhost:8000/verify-token/${localToken}`);
         if (!response.ok) throw new Error('Token verification failed');
         
-        // Fetch both types of logs
         fetchSystemLogs(localToken);
         fetchInterfaceLogs(localToken);
 
@@ -106,7 +156,7 @@ export default function Monitoring() {
     setSystemLogsLoading(true);
     setSystemLogsError(null);
     try {
-      const response = await fetch(`${apiUrl}/logs/`, {
+      const response = await fetch('http://localhost:8000/logs/', {
         headers: { 'Authorization': `Bearer ${authToken}` },
       });
       if (!response.ok) throw new Error(`SysLogs: ${response.status} ${await response.text()}`);
@@ -131,18 +181,16 @@ export default function Monitoring() {
     setInterfaceLogsLoading(true);
     setInterfaceLogsError(null);
     try {
-      // IMPORTANT: Adjust this URL to your actual InterfaceLogs endpoint
-      const response = await fetch(`${apiUrl}/interface-logs/`, {
+      const response = await fetch('http://localhost:8000/interface-logs/', {
         headers: { 'Authorization': `Bearer ${authToken}` },
       });
       if (!response.ok) throw new Error(`InterfaceLogs: ${response.status} ${await response.text()}`);
       const data = await response.json();
-      // Assuming InterfaceLog has a 'timestamp' field that's a sortable date string or number
       const sortedData = (Array.isArray(data) ? data : []).sort((a, b) => {
           const dateA = new Date(a.timestamp);
           const dateB = new Date(b.timestamp);
           if (!isNaN(dateA) && !isNaN(dateB)) return dateB - dateA;
-          return (b.id || 0) - (a.id || 0); // Fallback to ID
+          return (b.id || 0) - (a.id || 0); 
       });
       setInterfaceLogs(sortedData);
     } catch (err) {
@@ -199,7 +247,7 @@ export default function Monitoring() {
           const filterDate = new Date(ifaceEndDateFilter); filterDate.setHours(23,59,59,999);
           if (logDate > filterDate) matchesDate = false;
         }
-      } else if (ifaceStartDateFilter || ifaceEndDateFilter) matchesDate = false; // If date filter applied, but log has no valid date
+      } else if (ifaceStartDateFilter || ifaceEndDateFilter) matchesDate = false; 
 
       return matchesUsername && matchesAlterationType && matchesDidFail && matchesInterface && matchesProject && matchesDate;
     });
@@ -215,6 +263,7 @@ export default function Monitoring() {
     setIfaceInterfaceFilter(''); setIfaceProjectFilter(''); setIfaceStartDateFilter(''); setIfaceEndDateFilter('');
   };
 
+  // --- Scroll Function ---
   const scrollToSystemLogs = () => {
     const systemLogsSection = document.getElementById('system-logs-section');
     if (systemLogsSection) {
@@ -249,7 +298,7 @@ export default function Monitoring() {
       body: logs.map(rowMapper),
       startY: 20,
       theme: 'striped',
-      styles: { fontSize: 8, cellPadding: 1.5 }, // Adjusted cellPadding
+      styles: { fontSize: 8, cellPadding: 1.5 }, 
       headStyles: { fillColor: [22, 160, 133] },
       columnStyles: tableColumns.reduce((acc, col, index) => {
         if(col.width) acc[index] = { cellWidth: col.width };
@@ -273,7 +322,7 @@ export default function Monitoring() {
     [
       { header: "ID", dataKey: "id", width: 10 }, { header: "Username", dataKey: "user_username", width: 30 },
       { header: "Action", dataKey: "action", width: 40 }, { header: "Timestamp", dataKey: "timestamp_str", width: 40 },
-      { header: "Description", dataKey: "log_description" } // auto width
+      { header: "Description", dataKey: "log_description" } 
     ],
     log => [ log.id, log.user_username, extractSystemLogType(log.log_description), extractSystemLogTimestampString(log.log_description), log.log_description ]
   );
@@ -306,10 +355,10 @@ export default function Monitoring() {
       {/* --- Interface Logs Section --- */}
       <main className="log-monitoring-main interface-logs-main">
         <div className="logs-container">
-          <div className="section-header-controls"> {/* New container for header and button */}
+          <div className="section-header-controls"> 
             <h1 className="logs-header">Interface Activity Logs</h1>
             <button onClick={scrollToSystemLogs} className="scroll-to-button">
-              Go to System Event Logs &#x21E9; {/* Downwards arrow */}
+              Go to System Event Logs &#x21E9; 
             </button>
           </div>
           <div className="filters-section">
@@ -408,7 +457,6 @@ export default function Monitoring() {
       </main>
 
       {/* --- System Logs Section (Existing) --- */}
-      {/* Added id="system-logs-section" here */}
       <main id="system-logs-section" className="log-monitoring-main system-logs-main">
         <div className="logs-container">
           <h1 className="logs-header">System Event Logs</h1>

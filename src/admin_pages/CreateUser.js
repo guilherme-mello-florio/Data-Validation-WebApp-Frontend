@@ -93,8 +93,8 @@ export default function CreateUser() {
                         <input
                             type="text"
                             id="username"
-                            autoComplete="off"
-                            placeholder='Username'
+                            autoComplete="new-username" // Evita preenchimento automático
+                            placeholder="Username"
                             onChange={(e) => setUsername(e.target.value)}
                             value={username}
                             required
@@ -106,7 +106,8 @@ export default function CreateUser() {
                         <input
                             type="password"
                             id="password"
-                            placeholder='Password'
+                            autoComplete="new-password" // Evita preenchimento automático
+                            placeholder="Password"
                             onChange={(e) => setPassword(e.target.value)}
                             value={password}
                             required
@@ -118,7 +119,8 @@ export default function CreateUser() {
                         <input
                             type="email"
                             id="email"
-                            placeholder='Email'
+                            autoComplete="new-email" // Evita preenchimento automático
+                            placeholder="Email"
                             onChange={(e) => setEmail(e.target.value)}
                             value={email}
                             required
@@ -129,7 +131,8 @@ export default function CreateUser() {
                         <label htmlFor="role">Role:</label>
                         <select id="role" name="role" required>
                             <option value="admin">Admin</option>
-                            <option value="user">User</option>
+                            <option value="viewer">Viewer</option>
+                            <option value="editor">Editor</option>
                         </select>
                     </div>
 

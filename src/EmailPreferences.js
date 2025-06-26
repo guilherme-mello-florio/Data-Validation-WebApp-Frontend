@@ -107,7 +107,7 @@ function UserEmailPreferences() {
     };
 
     if (isLoading && !preferences.user_id) {
-        return <p>Carregando preferências...</p>;
+        return <p>Loading preferences...</p>;
     }
 
 return (
@@ -116,7 +116,7 @@ return (
                 <div className='back_button' onClick={() => window.history.back()}>◄ Back</div>
                     <img src={logo} />
         </header>
-        <h2>Preferências de E-mail</h2>
+        <h2>E-mail Preferences</h2>
             {error && <p style={{ color: 'red' }}>{error}</p>}
             {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
             <form onSubmit={handleSubmit}>
@@ -129,11 +129,11 @@ return (
                             onChange={handleCheckboxChange}
                             disabled={isLoading}
                         />
-                        Receber notificações de alterações na interface
+                        Receive interface changes notifications
                     </label>
                 </div>
                 <button type="submit" disabled={isLoading}>
-                    {isLoading ? 'Salvando...' : 'Salvar Preferências'}
+                    {isLoading ? 'Saving...' : 'Save Preferences'}
                 </button>
             </form>
     </div>

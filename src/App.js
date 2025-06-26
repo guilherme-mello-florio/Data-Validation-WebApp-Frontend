@@ -15,7 +15,8 @@ import ManageUsers from './admin_pages/ManageUsers';
 import ManageProjects from './admin_pages/ManageProjects';
 import Monitoring from './admin_pages/Monitoring';
 import CreateUser from './admin_pages/CreateUser';
-import EditUser from './admin_pages/EditUser';
+import EditUserListPage from './admin_pages/EditUserListPage';
+import EditUserFormPage from './admin_pages/EditUserFormPage';
 import ForgotPassword from './ForgotPassword';
 import ResetPassword from './ResetPassword';
 
@@ -78,7 +79,8 @@ function App() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/manage-users" element={<ManageUsers />} />
         <Route path="/admin/manage-users/create-user" element={<CreateUser />} />
-        <Route path="/admin/manage-users/edit-user" element={<EditUser />} />
+        <Route path="/admin/manage-users/edit-user" element={<EditUserListPage />} />
+        <Route path='/admin/manage-users/edit-user/:userId' element={<EditUserFormPage />}/>
         <Route path="/admin/manage-projects" element={<ManageProjects />} />
         <Route path="/admin/monitoring" element={<Monitoring />} />
         <Route path="/home" element={<ProtectedPageCustomer />} />
