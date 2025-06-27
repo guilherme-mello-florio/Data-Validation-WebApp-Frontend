@@ -90,7 +90,7 @@ function ProtectedPageCustomer() {
                         <button className='main_menu_button'>Interface Management</button>
                     )}
                     {(role === "admin" || role === "editor") && role !== "" && (
-                        <button className='main_menu_button'>Upload Interfaces to Validate</button>
+                        <button className='main_menu_button' onClick={() => navigate('/interface-upload')}>Upload Interfaces to Validate</button>
                     )}
                     <button className='main_menu_button'>Interface Validation Status and Delivery Control</button>
                     <button className='main_menu_button'>General KPIs - Dashboard</button>

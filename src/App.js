@@ -19,6 +19,7 @@ import EditUserListPage from './admin_pages/EditUserListPage';
 import EditUserFormPage from './admin_pages/EditUserFormPage';
 import ForgotPassword from './ForgotPassword';
 import ResetPassword from './ResetPassword';
+import InterfaceUploadPage from './InterfaceUpload';
 
 function App() {
   useEffect(() => {
@@ -84,6 +85,7 @@ function App() {
         <Route path="/admin/manage-projects" element={<ManageProjects />} />
         <Route path="/admin/monitoring" element={<Monitoring />} />
         <Route path="/home" element={<ProtectedPageCustomer />} />
+        <Route path="/interface-upload" element={<InterfaceUploadPage />} />
         <Route path="/change-password" element={<ProtectedPageChangePassword />} />
         <Route path="/connected-devices" element={<ProtectedPageCheckConnectedDevices />} />
         <Route path="/login-history" element={<ProtectedPageLoginHistory />} />
