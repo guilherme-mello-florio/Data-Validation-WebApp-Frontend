@@ -3,9 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import AdminHeader from './AdminHeader';
 
 const AVAILABLE_ROLES = [
-    { key: 'admin', label: '👔 Admin', description: 'Total access to the system.' },
-    { key: 'editor', label: '✏️ Editor', description: 'Can view and edit data. Can upload interfaces to the system' },
-    { key: 'viewer', label: '👀 Viewer', description: 'Can only view data.' },
+    { key: 'admin', label: '👔 Admin', description: 'Full access to the system. Can configure settings, create users, and assign permissions.' },
+    { key: 'editor', label: '✏️ Editor', description: 'Can modify data and content, but not system settings.' },
+    { key: 'viewer', label: '👀 Viewer', description: 'Can only view data, reports, and dashboards, without making any changes.' },
 ];
 
 export default function EditUserFormPage() {
