@@ -1,143 +1,127 @@
-import { useNavigate } from 'react-router-dom';
-import logo from './wysupp-logo.svg';
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import logo from './wysupp-logo.svg'; // Assuming you have a logo file
 
-const apiUrl = process.env.REACT_APP_API_URL;
-const API_URL = `${apiUrl}/api/v1/email-preferences`;
+const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 function UserEmailPreferences() {
-    const [preferences, setPreferences] = useState({
-        receber_notificacoes_alteracoes_interface: true,
-    });
+    const navigate = useNavigate();
+    const [projectPreferences, setProjectPreferences] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState('');
 
-    // Função para buscar as preferências usando fetch
-    const fetchPreferences = useCallback(async () => {
+    // Fetch all project-specific preferences for the user
+    const fetchPreferences = useCallback(async (token) => {
         setIsLoading(true);
         setError(null);
         try {
-            const token = localStorage.getItem('token'); // Exemplo
-            
-            const response = await fetch(API_URL, {
-                method: 'GET', // Opcional para GET, mas bom para clareza
-                headers: {
-                    'Authorization': `Bearer ${token}`, // Ajuste conforme seu método de auth
-                },
+            const response = await fetch(`${apiUrl}/api/v1/email-preferences/projects`, {
+                headers: { 'Authorization': `Bearer ${token}` },
             });
-
-            // fetch não lança erro para status HTTP como 4xx ou 5xx, então verificamos manualmente
             if (!response.ok) {
-                // Criamos um erro para ser pego pelo bloco catch
-                const error = new Error(`Erro HTTP: ${response.status}`);
-                error.status = response.status;
-                throw error;
+                throw new Error(`HTTP Error: ${response.status}`);
             }
-
-            // Precisamos extrair o corpo da resposta como JSON
             const data = await response.json();
-
-            if (data) {
-                setPreferences({
-                    receber_notificacoes_alteracoes_interface: data.receber_notificacoes_alteracoes_interface,
-                });
-            }
+            setProjectPreferences(data);
         } catch (err) {
-            console.error("Erro ao buscar preferências:", err);
-            setError("Não foi possível carregar suas preferências. Tente novamente mais tarde.");
-            
-            // Verificamos o status do erro que criamos
-            if (err.status === 404) {
-                 console.log("Nenhuma preferência encontrada, usando defaults.");
-            }
+            console.error("Error fetching preferences:", err);
+            setError("Could not load your preferences. Please try again later.");
         } finally {
             setIsLoading(false);
         }
     }, []);
 
+    // Initial load
     useEffect(() => {
-        fetchPreferences();
-    }, [fetchPreferences]);
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/');
+            return;
+        }
+        fetchPreferences(token);
+    }, [fetchPreferences, navigate]);
 
-    const handleCheckboxChange = (event) => {
-        const { name, checked } = event.target;
-        setPreferences(prevPreferences => ({
-            ...prevPreferences,
-            [name]: checked,
-        }));
-        setSuccessMessage('');
-    };
+    // Handle toggling a checkbox for a specific project
+    const handlePreferenceChange = async (projectId, newValue) => {
+        const token = localStorage.getItem('token');
+        
+        // Optimistic UI update for instant feedback
+        const originalPreferences = [...projectPreferences];
+        setProjectPreferences(prev => 
+            prev.map(p => 
+                p.project_id === projectId 
+                ? { ...p, receber_notificacoes_alteracoes_interface: newValue } 
+                : p
+            )
+        );
+        setSuccessMessage(''); // Clear previous success message
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-        setIsLoading(true);
-        setError(null);
-        setSuccessMessage('');
         try {
-            const token = localStorage.getItem('token'); // Exemplo
-            
-            const response = await fetch(API_URL, {
+            const response = await fetch(`${apiUrl}/api/v1/email-preferences/projects/${projectId}`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `Bearer ${token}`, // Ajuste conforme seu método de auth
-                    'Content-Type': 'application/json', // Essencial para enviar JSON
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
                 },
-                // O corpo da requisição precisa ser convertido para uma string JSON
-                body: JSON.stringify(preferences),
+                body: JSON.stringify({ receber_notificacoes_alteracoes_interface: newValue }),
             });
 
             if (!response.ok) {
-                const error = new Error(`Erro HTTP: ${response.status}`);
-                error.status = response.status;
-                throw error;
+                throw new Error('Failed to save preference.');
             }
-
-            // Mesmo que não usemos a resposta, é uma boa prática consumi-la
-            await response.json(); 
             
-            setSuccessMessage('Preferências salvas com sucesso!');
+            // Show a temporary success message
+            setSuccessMessage('Preference saved successfully!');
+            setTimeout(() => setSuccessMessage(''), 3000);
+
         } catch (err) {
-            console.error("Erro ao salvar preferências:", err);
-            setError('Não foi possível salvar suas preferências. Tente novamente.');
-            fetchPreferences(); // Recarrega as preferências originais em caso de erro
-        } finally {
-            setIsLoading(false);
+            console.error("Error saving preference:", err);
+            setError('Could not save your change. Please try again.');
+            // Revert UI to original state on failure
+            setProjectPreferences(originalPreferences);
         }
     };
 
-    if (isLoading && !preferences.user_id) {
-        return <p>Loading preferences...</p>;
+    if (isLoading) {
+        return <div className="preferences-loading">Loading preferences...</div>;
     }
 
-return (
-    <div className='connected_devices_body'>
-        <header className='connected_devices_header'>
-                <div className='back_button' onClick={() => window.history.back()}>◄ Back</div>
-                    <img src={logo} />
-        </header>
-        <h2>E-mail Preferences</h2>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
-            <form onSubmit={handleSubmit}>
-                <div>
-                    <label>
-                        <input
-                            type="checkbox"
-                            name="receber_notificacoes_alteracoes_interface"
-                            checked={preferences.receber_notificacoes_alteracoes_interface}
-                            onChange={handleCheckboxChange}
-                            disabled={isLoading}
-                        />
-                        Receive interface changes notifications
-                    </label>
+    return (
+        <div className='preferences-page-body'>
+            <header className='preferences-header'>
+                <div className='back-button' onClick={() => navigate(-1)}>◄ Back</div>
+                <img src={logo} alt="Wysupp Logo" className="header-logo" />
+            </header>
+            <main className="preferences-container">
+                <h1 className="main-title">Email Notification Preferences</h1>
+                <p className="main-subtitle">Manage notifications for interface changes for each of your projects.</p>
+                
+                {error && <p className="feedback-message error-message">{error}</p>}
+                {successMessage && <p className="feedback-message success-message">{successMessage}</p>}
+                
+                <div className="preferences-list">
+                    {projectPreferences.length > 0 ? (
+                        projectPreferences.map(pref => (
+                            <div key={pref.project_id} className="preference-item">
+                                <span className="project-name">{pref.project_name}</span>
+                                <label className="switch">
+                                    <input
+                                        type="checkbox"
+                                        checked={pref.receber_notificacoes_alteracoes_interface}
+                                        onChange={(e) => handlePreferenceChange(pref.project_id, e.target.checked)}
+                                    />
+                                    <span className="slider round"></span>
+                                </label>
+                            </div>
+                        ))
+                    ) : (
+                        <p>You are not assigned to any projects with configurable notifications.</p>
+                    )}
                 </div>
-                <button type="submit" disabled={isLoading}>
-                    {isLoading ? 'Saving...' : 'Save Preferences'}
-                </button>
-            </form>
-    </div>
-);
+            </main>
+        </div>
+    );
 }
 
 export default UserEmailPreferences;

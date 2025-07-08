@@ -56,6 +56,10 @@ const extractSystemLogType = (description) => {
     return description;
   }
 
+  if (description.includes("Email notification sent to")) {
+    return "Email Notification Sent";
+  }
+
   // Final fallback if no other pattern matches.
   return "Unknown Log Format";
 };

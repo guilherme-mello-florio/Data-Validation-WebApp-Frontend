@@ -19,8 +19,6 @@ export default function EditUserFormPage() {
     const [role, setRole] = useState('');
     
     // Estados de controle da UI
-    // **CORREÇÃO PRINCIPAL:** `initialData` começa como `null`.
-    // Usaremos a existência de `initialData` para controlar o estado de carregamento.
     const [initialData, setInitialData] = useState(null); 
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState('');
@@ -45,12 +43,10 @@ export default function EditUserFormPage() {
 
                 const userData = await response.json();
                 
-                // Popula os estados do formulário e, mais importante,
-                // o estado 'initialData' que libera a renderização do formulário.
                 setUsername(userData.username);
-                setEmail(userData.email || ''); // Trata emails nulos de forma segura
+                setEmail(userData.email || ''); 
                 setRole(userData.role);
-                setInitialData(userData);
+                setInitialData(userData); // Define initialData após buscar os dados
 
             } catch (err) {
                 setError(err.message);
@@ -68,9 +64,16 @@ export default function EditUserFormPage() {
         setSuccessMessage('');
 
         const updatedUserData = {};
-        updatedUserData.username = username;
-        updatedUserData.email = email;
-        updatedUserData.role = role;
+        // Adiciona apenas os campos que foram alterados para evitar PUTs desnecessários
+        if (username !== initialData.username) {
+            updatedUserData.username = username;
+        }
+        if (email !== initialData.email) {
+            updatedUserData.email = email;
+        }
+        if (role !== initialData.role) {
+            updatedUserData.role = role;
+        }
         
         if (Object.keys(updatedUserData).length === 0) {
             setError("Nenhuma alteração foi feita.");
@@ -94,30 +97,85 @@ export default function EditUserFormPage() {
             }
             
             setSuccessMessage("Usuário atualizado com sucesso!");
-            setTimeout(() => navigate('/admin/manage-users/edit-user'), 2000);
+            // Atualiza initialData com os novos valores para refletir o estado atual
+            setInitialData(prev => ({ ...prev, ...updatedUserData }));
+            // Não redireciona imediatamente, permite que o usuário veja a mensagem de sucesso
+            // e talvez continue editando ou use os novos botões de ação.
+            // setTimeout(() => navigate('/admin/manage-users/edit-user'), 2000); 
 
         } catch (err) {
             setError(err.message);
         }
     };
 
+    // NOVO: Função para deletar o usuário
+    const handleDeleteUser = async () => {
+        if (!initialData) return; // Garante que os dados do usuário estão carregados
+        if (!window.confirm(`Are you sure you want to delete the user ${initialData.username}? This action cannot be undone.`)) {
+            return;
+        }
+
+        const token = localStorage.getItem('token');
+        try {
+            const response = await fetch(`${apiUrl}/api/users/${userId}`, { 
+                method: 'DELETE', 
+                headers: { 'Authorization': `Bearer ${token}` } 
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Failed to delete the user.');
+            }
+            alert('User deleted successfully!');
+            navigate('/admin/manage-users/edit-user'); // Redireciona para a lista após a exclusão
+        } catch (err) {
+            alert(err.message);
+            setError(err.message);
+        }
+    };
+
+    // NOVO: Função para ativar/desativar o usuário
+    const handleToggleStatus = async () => {
+        if (!initialData) return; // Garante que os dados do usuário estão carregados
+        const action = initialData.is_active ? "deactivate" : "activate";
+        if (!window.confirm(`Are you sure you want to ${action} the user ${initialData.username}?`)) {
+            return;
+        }
+
+        const token = localStorage.getItem('token');
+        try {
+            const response = await fetch(`${apiUrl}/api/users/${userId}/status`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_active: !initialData.is_active }),
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `Failed to ${action} the user.`);
+            }
+            alert(`User ${action}d successfully!`);
+            // Atualiza o estado `initialData` para refletir a mudança de status na UI
+            setInitialData(prev => ({ ...prev, is_active: !prev.is_active }));
+            setSuccessMessage(`Usuário ${action === 'activate' ? 'ativado' : 'desativado'} com sucesso!`);
+        } catch (err) {
+            alert(err.message);
+            setError(err.message);
+        }
+    };
+
+
     // --- LÓGICA DE RENDERIZAÇÃO CORRIGIDA ---
 
-    // Primeiro, checa por erros.
     if (error) {
         return <div className="p-4 m-4 bg-red-100 text-red-700 rounded-md text-center">Error: {error}</div>;
     }
 
-    // Segundo, e mais importante: enquanto `initialData` for `null`, mostramos o loading.
-    // Isso garante que o formulário só renderize quando os dados existirem.
     if (!initialData) {
         return <div className="text-center p-8">Loading user data...</div>;
     }
 
-    // Se passamos pelas checagens acima, é seguro renderizar o formulário.
     return (
         <div className="bg-gray-100 min-h-screen font-sans">
-            <AdminHeader page={`Editar Usuário: ${initialData.username}`} />
+            <AdminHeader page={`Edit User: ${initialData.username}`} />
             <main className="p-4 md:p-8">
                 <div className="max-w-4xl mx-auto">
                     <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-md space-y-6">
@@ -147,6 +205,23 @@ export default function EditUserFormPage() {
                             </div>
                         </div>
                         <div className="flex justify-end space-x-4 pt-4">
+                            {/* NOVO: Botão Deactivate/Activate */}
+                            <button
+                                type="button"
+                                onClick={handleToggleStatus}
+                                className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${initialData.is_active ? 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500' : 'bg-green-600 hover:bg-green-700 focus:ring-green-500'} focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out`}
+                            >
+                                {initialData.is_active ? 'Deactivate User' : 'Activate User'}
+                            </button>
+                            {/* NOVO: Botão Delete */}
+                            <button
+                                type="button"
+                                onClick={handleDeleteUser}
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-150 ease-in-out"
+                            >
+                                Delete User
+                            </button>
+
                             <button type="button" onClick={() => navigate('/admin/manage-users/edit-user')} className="bg-gray-200 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-300">
                                 Back to User List
                             </button>

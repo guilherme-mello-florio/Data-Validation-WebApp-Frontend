@@ -9,12 +9,12 @@ const AVAILABLE_ROLES = [
 ];
 
 const SORT_OPTIONS = [
-    { key: 'username_asc', label: 'Nome (A-Z)', value: { by: 'username', order: 'asc' } },
-    { key: 'username_desc', label: 'Nome (Z-A)', value: { by: 'username', order: 'desc' } },
-    { key: 'role_asc', label: 'Permissão (A-Z)', value: { by: 'role', order: 'asc' } },
-    { key: 'role_desc', label: 'Permissão (Z-Z)', value: { by: 'role', order: 'desc' } },
-    { key: 'status_desc', label: 'Status (Ativo > Inativo)', value: { by: 'is_active', order: 'desc' } },
-    { key: 'status_asc', label: 'Status (Inativo > Ativo)', value: { by: 'is_active', order: 'asc' } },
+    { key: 'username_asc', label: 'Name (A-Z)', value: { by: 'username', order: 'asc' } },
+    { key: 'username_desc', label: 'Name (Z-A)', value: { by: 'username', order: 'desc' } },
+    { key: 'role_asc', label: 'Permission (A-Z)', value: { by: 'role', order: 'asc' } },
+    { key: 'role_desc', label: 'Permission (Z-Z)', value: { by: 'role', order: 'desc' } },
+    { key: 'status_desc', label: 'Status (Active > Inactive)', value: { by: 'is_active', order: 'desc' } },
+    { key: 'status_asc', label: 'Status (Inactive > Active)', value: { by: 'is_active', order: 'asc' } },
 ];
 
 export default function EditUserListPage() {
@@ -42,8 +42,8 @@ export default function EditUserListPage() {
     const fetchProjects = useCallback(async () => {
         const token = localStorage.getItem('token');
         try {
-            const response = await fetch(`${apiUrl}/projects`, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (!response.ok) throw new Error('Falha ao buscar projetos.');
+            const response = await fetch(`${apiUrl}/api/projects`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (!response.ok) throw new Error('Failed to search for projects.');
             const data = await response.json();
             setProjects(data || []);
         } catch (err) {
@@ -101,18 +101,16 @@ export default function EditUserListPage() {
             });
 
             if (!response.ok) {
-                // Em caso de erro na API de autocomplete, não exiba sugestões
                 setAutocompleteSuggestions([]);
                 return;
             }
 
             const data = await response.json();
-            // A API de sugestões deve retornar um array de objetos, ex: [{ username: 'usuario1', email: 'a@b.com' }]
             setAutocompleteSuggestions(data || []);
 
         } catch (err) {
             console.error("Erro ao buscar sugestões de autocomplete:", err);
-            setAutocompleteSuggestions([]); // Limpa as sugestões em caso de erro
+            setAutocompleteSuggestions([]);
         }
     }, [apiUrl]);
 
@@ -130,12 +128,12 @@ export default function EditUserListPage() {
         if (autocompleteTimeoutRef.current) {
             clearTimeout(autocompleteTimeoutRef.current);
         }
-        if (searchTerm.length >= 2) { // Dispara a busca de sugestões após 2 ou mais caracteres
+        if (searchTerm.length >= 2) { 
             autocompleteTimeoutRef.current = setTimeout(() => {
                 fetchAutocompleteSuggestions(searchTerm);
-            }, 300); // Debounce de 300ms
+            }, 300); 
         } else {
-            setAutocompleteSuggestions([]); // Limpa as sugestões se o termo for muito curto
+            setAutocompleteSuggestions([]); 
         }
     }, [searchTerm, fetchAutocompleteSuggestions]);
 
@@ -146,52 +144,24 @@ export default function EditUserListPage() {
 
     // Handler para selecionar uma sugestão
     const handleSelectSuggestion = (suggestion) => {
-        setSearchTerm(suggestion.username || suggestion.email); // Define o termo de busca com o valor selecionado
-        setAutocompleteSuggestions([]); // Limpa as sugestões
-        // O fetchUsers será chamado automaticamente pelo useEffect que observa searchTerm
+        setSearchTerm(suggestion.username || suggestion.email); 
+        setAutocompleteSuggestions([]); 
     };
 
-    const handleDeleteUser = async (userId, username) => {
-        if (!window.confirm(`Tem certeza que deseja deletar o usuário ${username}?`)) return;
-        const token = localStorage.getItem('token');
-        try {
-            const response = await fetch(`${apiUrl}/api/users/${userId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-            if (!response.ok) throw new Error('Falha ao deletar usuário.');
-            alert('Usuário deletado com sucesso!');
-            fetchUsers();
-        } catch (err) {
-            alert(err.message);
-        }
-    };
-
-    const handleToggleStatus = async (user) => {
-        const action = user.is_active ? "desativar" : "ativar";
-        if (!window.confirm(`Tem certeza que deseja ${action} o usuário ${user.username}?`)) return;
-        const token = localStorage.getItem('token');
-        try {
-            const response = await fetch(`${apiUrl}/api/users/${user.id}/status`, {
-                method: 'PATCH',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ is_active: !user.is_active }),
-            });
-            if (!response.ok) throw new Error(`Falha ao ${action} o usuário.`);
-            fetchUsers();
-        } catch (err) {
-            alert(err.message);
-        }
-    };
+    // REMOVIDOS: handleDeleteUser e handleToggleStatus daqui
+    // Eles serão movidos para EditUserFormPage.js
 
     const handleExportCsv = () => {
         setIsExporting(true);
         const headers = ["Username", "Email", "Permission", "Status", "Projects"];
         const csvRows = users.map(user => {
             const escapeCsv = (val) => `"${String(val ?? '').replace(/"/g, '""')}"`;
-            const projectsList = user.projects?.map(p => p.project_name).join('; ') || "Nenhum";
+            const projectsList = user.projects?.map(p => p.project_name).join('; ') || "No projects";
             return [
                 escapeCsv(user.username),
                 escapeCsv(user.email),
                 escapeCsv(user.role),
-                escapeCsv(user.is_active ? 'Ativo' : 'Inativo'),
+                escapeCsv(user.is_active ? 'Active' : 'Inactive'),
                 escapeCsv(projectsList)
             ].join(',');
         });
@@ -211,32 +181,32 @@ export default function EditUserListPage() {
         setSelectedProjects([]);
         setSelectedStatus('');
         setSortConfig(SORT_OPTIONS[0].key);
-        setAutocompleteSuggestions([]); // Limpa sugestões ao resetar
+        setAutocompleteSuggestions([]); 
     };
 
     return (
         <div className="bg-gray-50 min-h-screen font-sans text-gray-800">
-            <AdminHeader page="Gerenciar Usuários" />
+            <AdminHeader page="Edit Users" />
             <main className="p-4 md:p-8">
                 <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6 animate-fade-in-up">
-                    <h2 className="text-3xl font-extrabold text-gray-800 mb-8 text-center">Gerenciar Usuários</h2>
+                    <h2 className="text-3xl font-extrabold text-gray-800 mb-8 text-center">Edit Users</h2>
                     
                     <div className="bg-gray-50 p-6 rounded-lg shadow-inner mb-6 border border-gray-200">
-                        <h3 className="text-xl font-semibold text-gray-700 mb-4">Filtros e Ordenação</h3>
+                        <h3 className="text-xl font-semibold text-gray-700 mb-4">Filters and sorting</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                            <div className="lg:col-span-4 relative"> {/* Adicionado 'relative' para posicionar as sugestões */}
-                                <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
+                            <div className="lg:col-span-4 relative"> 
+                                <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">Search</label>
                                 <input
                                     id="search"
                                     type="text"
-                                    placeholder="Buscar por nome ou email..."
+                                    placeholder="Search for a name or email..."
                                     value={searchTerm}
                                     onChange={e => setSearchTerm(e.target.value)}
                                     className="input-filtro-usuario"
-                                    autoComplete="off" // Desativa o autocomplete padrão do navegador
+                                    autoComplete="off" 
                                 />
                                 {autocompleteSuggestions.length > 0 && (
-                                    <ul className="autocomplete-suggestions"> {/* Nova lista para sugestões */}
+                                    <ul className="autocomplete-suggestions"> 
                                         {autocompleteSuggestions.map((user, index) => (
                                             <li key={index} onClick={() => handleSelectSuggestion(user)}>
                                                 {user.username} ({user.email})
@@ -247,21 +217,21 @@ export default function EditUserListPage() {
                             </div>
                             
                             <div className="flex flex-col">
-                                <label htmlFor="roles" className="block text-sm font-medium text-gray-700 mb-1">Permissões</label>
+                                <label htmlFor="roles" className="block text-sm font-medium text-gray-700 mb-1">Permissions</label>
                                 <select
                                     id="roles"
                                     multiple
                                     value={selectedRoles}
                                     onChange={handleMultiSelectChange(setSelectedRoles)}
                                     className="w-full p-3 border border-gray-300 rounded-lg h-32 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 custom-scrollbar"
-                                    title="Segure Ctrl/Cmd para selecionar múltiplos"
+                                    title="Hold Ctrl/Cmd to select multiple"
                                 >
                                     {AVAILABLE_ROLES.map(r => (<option key={r.key} value={r.key}>{r.label}</option>))}
                                 </select>
                             </div>
 
                             <div className="flex flex-col">
-                                <label htmlFor="projects" className="block text-sm font-medium text-gray-700 mb-1">Projetos</label>
+                                <label htmlFor="projects" className="block text-sm font-medium text-gray-700 mb-1">Projects</label>
                                 <select
                                     id="projects"
                                     multiple
@@ -282,14 +252,14 @@ export default function EditUserListPage() {
                                     onChange={e => setSelectedStatus(e.target.value)}
                                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
                                 >
-                                    <option value="">Todos</option>
-                                    <option value="true">Ativo</option>
-                                    <option value="false">Inativo</option>
+                                    <option value="">All</option>
+                                    <option value="true">Active</option>
+                                    <option value="false">Inactive</option>
                                 </select>
                             </div>
 
                             <div className="flex flex-col">
-                                <label htmlFor="sort" className="block text-sm font-medium text-gray-700 mb-1">Ordenar por</label>
+                                <label htmlFor="sort" className="block text-sm font-medium text-gray-700 mb-1">Sort by</label>
                                 <select
                                     id="sort"
                                     value={sortConfig}
@@ -306,14 +276,14 @@ export default function EditUserListPage() {
                                 onClick={handleResetFilters}
                                 className="px-5 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition duration-200 ease-in-out shadow-md"
                             >
-                                Limpar Filtros
+                                Reset Filters
                             </button>
                             <button
                                 onClick={handleExportCsv}
                                 disabled={isExporting || users.length === 0}
                                 className="px-5 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-200 ease-in-out shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {isExporting ? 'Exportando...' : 'Exportar CSV'}
+                                {isExporting ? 'Exporting...' : 'Export CSV'}
                             </button>
                         </div>
                     </div>
@@ -324,18 +294,18 @@ export default function EditUserListPage() {
                                 <tr>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider rounded-tl-lg">Username</th>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Email</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Permissão</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Projetos</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Permission</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Projects</th>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
-                                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider rounded-tr-lg">Ações</th>
+                                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider rounded-tr-lg">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {loading && <tr><td colSpan="6" className="text-center py-10 text-lg text-blue-500">Carregando usuários...</td></tr>}
+                                {loading && <tr><td colSpan="6" className="text-center py-10 text-lg text-blue-500">Loading users...</td></tr>}
                                 {error && <tr><td colSpan="6" className="text-center py-10 text-lg text-red-500 font-semibold">{error}</td></tr>}
                                 {!loading && !error && users.length === 0 && (
                                     <tr>
-                                        <td colSpan="6" className="text-center py-10 text-lg text-gray-500">Nenhum usuário encontrado com os filtros aplicados.</td>
+                                        <td colSpan="6" className="text-center py-10 text-lg text-gray-500">No user found with the active filters.</td>
                                     </tr>
                                 )}
                                 {!loading && !error && users.map(user => (
@@ -346,7 +316,7 @@ export default function EditUserListPage() {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{user.projects?.map(p => p.project_name).join(', ') || 'Nenhum'}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                {user.is_active ? 'Ativo' : 'Inativo'}
+                                                {user.is_active ? 'Active' : 'Inactive'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
@@ -354,20 +324,9 @@ export default function EditUserListPage() {
                                                 onClick={() => navigate(`/admin/manage-users/edit-user/${user.id}`)}
                                                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out"
                                             >
-                                                Editar
+                                                Edit
                                             </button>
-                                            <button
-                                                onClick={() => handleToggleStatus(user)}
-                                                className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${user.is_active ? 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500' : 'bg-green-600 hover:bg-green-700 focus:ring-green-500'} focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out`}
-                                            >
-                                                {user.is_active ? 'Desativar' : 'Ativar'}
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteUser(user.id, user.username)}
-                                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-150 ease-in-out"
-                                            >
-                                                Deletar
-                                            </button>
+                                            {/* REMOVIDOS: Botões Deactivate/Activate e Delete */}
                                         </td>
                                     </tr>
                                 ))}

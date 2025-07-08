@@ -58,6 +58,10 @@ function ProtectedPageAdmin() {
         navigate("/admin/manage-users");
     }
 
+    function manageProjects(){
+        navigate("/admin/manage-projects");
+    }
+
     function monitoring(){
         navigate("/admin/monitoring");
     }
@@ -71,7 +75,7 @@ function ProtectedPageAdmin() {
                     <button className='main_menu_button'>Choose Project ▼</button>
                     <button className='main_menu_button'>Dashboard</button>
                     <button className='main_menu_button' onClick={manageUsers}>Manage Users</button>
-                    <button className='main_menu_button'>Manage Projects</button>
+                    <button className='main_menu_button' onClick={manageProjects}>Manage Projects</button>
                     <button className='main_menu_button' onClick={monitoring}>Monitoring</button>
                 </div>
                 <div className='cliente_home_deco'>

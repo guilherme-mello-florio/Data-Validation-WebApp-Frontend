@@ -15,8 +15,11 @@ import ManageUsers from './admin_pages/ManageUsers';
 import ManageProjects from './admin_pages/ManageProjects';
 import Monitoring from './admin_pages/Monitoring';
 import CreateUser from './admin_pages/CreateUser';
+import CreateProject from './admin_pages/CreateProject';
 import EditUserListPage from './admin_pages/EditUserListPage';
 import EditUserFormPage from './admin_pages/EditUserFormPage';
+import EditProjectListPage from './admin_pages/EditProjectListPage';
+import EditProjectFormPage from './admin_pages/EditProjectFormPage';
 import ForgotPassword from './ForgotPassword';
 import ResetPassword from './ResetPassword';
 import InterfaceUploadPage from './InterfaceUpload';
@@ -83,6 +86,9 @@ function App() {
         <Route path="/admin/manage-users/edit-user" element={<EditUserListPage />} />
         <Route path='/admin/manage-users/edit-user/:userId' element={<EditUserFormPage />}/>
         <Route path="/admin/manage-projects" element={<ManageProjects />} />
+        <Route path="/admin/manage-projects/create-project" element={<CreateProject />} />
+        <Route path="/admin/manage-projects/edit-project" element={<EditProjectListPage />} />
+        <Route path='/admin/manage-projects/edit-project/:projectId' element={<EditProjectFormPage />}/>
         <Route path="/admin/monitoring" element={<Monitoring />} />
         <Route path="/home" element={<ProtectedPageCustomer />} />
         <Route path="/interface-upload" element={<InterfaceUploadPage />} />
